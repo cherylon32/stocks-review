@@ -328,3 +328,20 @@ def test_badly_broken_rss_still_yields_headlines():
            "<description><p>unclosed <img src=x></description></item><broken attr=1 2></channel></rss>").encode()
     [entry] = sources.parse_feed(xml, feed, NOW)
     assert entry["title"] == "寒武纪股价大涨 AI芯片" and entry["link"] == "https://36kr.com/p/1?a=1&b=2"
+
+
+def test_alert_says_when_the_news_was_posted(cfg):
+    stories = analyze.build_stories(big_story_items(), cfg)
+    nvda = next(s for s in stories if "NVIDIA" in s["companies"])
+    assert "posted 30 min ago" in notify.from_story(nvda, NOW).detail
+
+
+def test_story_points_to_its_newest_report(cfg):
+    [story] = analyze.build_stories([
+        item("Nvidia shares tumble 7% after Jensen Huang warns on China sales", "Reuters", 120),
+        item("Nvidia shares tumble 7% after Jensen Huang warns on China sales, deepening losses", "Some Blog", 5),
+    ], cfg)
+    assert story["source"] == "Reuters"
+    assert story["newest"]["source"] == "Some Blog"
+    [single] = analyze.build_stories([item("Stripe files confidentially for IPO", "Reuters")], cfg)
+    assert single["newest"] is None

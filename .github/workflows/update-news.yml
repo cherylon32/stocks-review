@@ -2,7 +2,7 @@ name: Update news
 
 on:
   schedule:
-    - cron: "7,37 * * * *"   # every 30 minutes (GitHub may start it a few minutes late)
+    - cron: "2,17,32,47 * * * *"   # every 15 minutes (GitHub may start it a few minutes late)
   workflow_dispatch:
     inputs:
       test_notification:

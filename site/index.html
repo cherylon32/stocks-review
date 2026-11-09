@@ -30,6 +30,9 @@
   <main class="wrap">
     <section id="tab-big" class="tab" role="tabpanel">
       <div id="big-summary" class="summary"></div>
+      <div class="sortbar" role="group" aria-label="Sort stories">
+        <span>Sort:</span><button type="button" data-sort="newest">Newest first</button><button type="button" data-sort="important">Most important</button>
+      </div>
       <div id="big-list" class="list"></div>
       <h2 class="section-title" id="notable-title" hidden>Worth a look <span class="hint">notable, not alert-worthy</span></h2>
       <div id="notable-list" class="list"></div>
@@ -60,6 +63,9 @@
           </label>
           <label class="check"><input type="checkbox" id="f-watch"> Watchlist only</label>
           <label class="check"><input type="checkbox" id="f-important"> Notable+ only</label>
+        </div>
+        <div class="sortbar" role="group" aria-label="Sort stories">
+          <span>Sort:</span><button type="button" data-sort="newest">Newest first</button><button type="button" data-sort="important">Most important</button>
         </div>
       </div>
       <div id="all-list" class="list"></div>

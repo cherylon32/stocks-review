@@ -52,6 +52,7 @@ const REGION_OF_MARKET = { US: "US", CN: "CN", HK: "CN", TW: "TW", JP: "ASIA", K
 const REGION_OF_FEED = { US: "US", CN: "CN", HK: "CN", TW: "TW", Asia: "ASIA" };
 
 let DATA = null;
+let SORT = "newest"; // "newest" or "important"; set from saved preference in init()
 const $ = (sel) => document.querySelector(sel);
 
 const store = {
@@ -75,6 +76,18 @@ function ago(iso) {
   return then.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + " " +
     then.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
+
+// Exact date and time in your own time zone, e.g. "Mon, 9 Nov, 21:35".
+function stamp(iso) {
+  const d = new Date(iso);
+  const opts = { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" };
+  if (d.getFullYear() !== new Date().getFullYear()) opts.year = "numeric";
+  return d.toLocaleString(undefined, opts);
+}
+
+const newestFirst = (a, b) => b.latest.localeCompare(a.latest);
+const importantFirst = (a, b) => b.score - a.score || newestFirst(a, b);
+const storyOrder = () => (SORT === "newest" ? newestFirst : importantFirst);
 
 function dayLabel(iso) {
   const d = new Date(iso), today = new Date();
@@ -100,7 +113,7 @@ function checklistFor(s) {
   return items;
 }
 
-// One card per company: the strongest story, with that company's other stories folded underneath.
+// One card per company: its newest (or most important) story, with the others folded underneath.
 function groupByCompany(stories) {
   const groups = new Map();
   for (const s of stories) {
@@ -109,17 +122,18 @@ function groupByCompany(stories) {
     groups.get(key).push(s);
   }
   return [...groups.entries()].map(([key, list]) => {
-    list.sort((a, b) => b.score - a.score);
+    list.sort(storyOrder());
     return { key, lead: list[0], rest: list.slice(1), latest: list.reduce((m, s) => (s.latest > m ? s.latest : m), "") };
-  });
+  }).sort((a, b) => (SORT === "newest" ? b.latest.localeCompare(a.latest) : importantFirst(a.lead, b.lead)));
 }
 
 function relatedList(group, label) {
   if (!group.rest.length) return "";
   const named = group.lead.companies[0] ? ` about ${esc(group.key)}` : "";
-  return `<details class="related"><summary>${group.rest.length} more ${label}${named}</summary><ul>${group.rest.map((s) =>
+  const what = group.rest.length === 1 ? label.replace(/stories$/, "story") : label;
+  return `<details class="related"><summary>${group.rest.length} more ${what}${named}</summary><ul>${group.rest.map((s) =>
     `<li><a href="${esc(s.link)}" target="_blank" rel="noopener">${esc(s.title)}</a>
-      <span class="src">${esc(s.source)}${s.outlets > 1 ? ` +${s.outlets - 1}` : ""} · ${ago(s.latest)} · score ${s.score}</span></li>`).join("")}</ul></details>`;
+      <span class="src">${esc(s.source)}${s.outlets > 1 ? ` +${s.outlets - 1}` : ""} · posted ${esc(stamp(s.published))} · updated ${ago(s.latest)} · score ${s.score}</span></li>`).join("")}</ul></details>`;
 }
 
 function storyCard(s, extra = "") {
@@ -133,18 +147,24 @@ function storyCard(s, extra = "") {
     : "";
   const moreList = s.more.length
     ? `<ul class="more-list" hidden>${s.more.map((m) =>
-        `<li><a href="${esc(m.link)}" target="_blank" rel="noopener">${esc(m.title)}</a><span class="src">${esc(m.source)}</span></li>`).join("")}</ul>`
+        `<li><a href="${esc(m.link)}" target="_blank" rel="noopener">${esc(m.title)}</a><span class="src">${esc(m.source)} · ${esc(stamp(m.published))}</span></li>`).join("")}</ul>`
     : "";
   const reasons = s.reasons.filter((r) => !r.startsWith("Trusted source"));
   const checklist = s.level !== "normal" ? checklistFor(s) : [];
+  const developing = new Date(s.latest) - new Date(s.published) > 10 * 60000;  // newer reports arrived later
+  const latest = developing && s.newest
+    ? `<p class="latest-line"><span class="tag-latest">Latest</span> <a href="${esc(s.newest.link)}" target="_blank" rel="noopener">${esc(s.newest.title)}</a>
+        <span class="src">${esc(s.newest.source)} · ${esc(stamp(s.newest.published))}</span></p>`
+    : "";
   return `<article class="card ${s.level}">
     <div class="card-top">
       <span class="badge ${s.level}">${levelText} · ${s.score}</span>
       ${s.alerted ? '<span title="You were notified about this">🔔 Alerted</span>' : ""}
-      <time datetime="${esc(s.latest)}">${ago(s.latest)}</time>
+      <time datetime="${esc(s.latest)}" title="${esc(stamp(s.latest))}">${developing ? "Updated " : ""}${ago(s.latest)}</time>
     </div>
     <h3><a href="${esc(s.link)}" target="_blank" rel="noopener" lang="${s.lang === "zh" ? "zh" : "en"}">${esc(s.title)}</a></h3>
-    <div class="src">${esc(s.source)}${more}</div>
+    <div class="src">${esc(s.source)} · <time class="posted" datetime="${esc(s.published)}">${esc(stamp(s.published))}</time>${more}</div>
+    ${latest}
     ${s.summary ? `<p class="summary-text">${esc(s.summary)}</p>` : ""}
     ${companies || cats ? `<div class="chips">${companies}${cats}</div>` : ""}
     ${reasons.length ? `<p class="why"><b>Why it's here:</b> ${esc(reasons.join(" · "))}</p>` : ""}
@@ -180,7 +200,7 @@ function renderGroups(el, groups, label, empty) {
 
 function renderBig() {
   const recentBig = DATA.stories.filter((s) => s.level === "big" && !s.alt_dup && hoursOld(s.latest) <= 72);
-  const groups = groupByCompany(recentBig).sort((a, b) => b.latest.localeCompare(a.latest));
+  const groups = groupByCompany(recentBig);
   const today = groups.filter((g) => hoursOld(g.latest) <= 24);
   $("#count-big").textContent = today.length || "";
   const summary = $("#big-summary");
@@ -197,8 +217,7 @@ function renderBig() {
   renderGroups($("#big-list"), groups, "big stories", "No big stories in the last 3 days.");
   const shownBig = new Set(groups.map((g) => g.key));
   const notable = DATA.stories.filter((s) => s.level === "notable" && !s.alt_dup && hoursOld(s.latest) <= 24);
-  const notableGroups = groupByCompany(notable).filter((g) => !shownBig.has(g.key))
-    .sort((a, b) => b.lead.score - a.lead.score).slice(0, 10);
+  const notableGroups = groupByCompany(notable).filter((g) => !shownBig.has(g.key)).slice(0, 10);
   $("#notable-title").hidden = !notableGroups.length;
   renderGroups($("#notable-list"), notableGroups, "stories", "");
 }
@@ -215,10 +234,12 @@ function renderAll() {
     (!watchOnly || s.watch) &&
     (!important || s.level !== "normal") &&
     (!q || (s.title + " " + s.companies.join(" ") + " " + s.source).toLowerCase().includes(q)));
+  rows.sort(storyOrder());
   const shown = rows.slice(0, 300);
-  renderList($("#all-list"), shown, { groupByDay: true, empty: "No news matches these filters." });
+  renderList($("#all-list"), shown, { groupByDay: SORT === "newest", empty: "No news matches these filters." });
+  const which = SORT === "newest" ? "newest" : "most important";
   $("#all-list").insertAdjacentHTML("afterbegin",
-    `<p class="result-count">${rows.length} ${rows.length === 1 ? "story" : "stories"}${rows.length > shown.length ? ` (showing newest ${shown.length})` : ""}</p>`);
+    `<p class="result-count">${rows.length} ${rows.length === 1 ? "story" : "stories"}${rows.length > shown.length ? ` (showing ${which} ${shown.length})` : ""}</p>`);
 }
 
 function ipoRow(r) {
@@ -239,8 +260,7 @@ function renderIpo() {
     ? `<p class="empty">The IPO calendar couldn't be loaded this time. It will retry on the next update.</p>`
     : groups.map(([title, rows]) => `<div class="ipo-group"><h3>${title}</h3>${
         rows && rows.length ? sortTech(rows).map(ipoRow).join("") : '<p class="empty">None listed.</p>'}</div>`).join("");
-  const ipoNews = DATA.stories.filter((s) => s.categories.includes("ipo") && !s.alt_dup)
-    .sort((a, b) => b.latest.localeCompare(a.latest)).slice(0, 60);
+  const ipoNews = DATA.stories.filter((s) => s.categories.includes("ipo") && !s.alt_dup).sort(newestFirst).slice(0, 60);
   renderList($("#ipo-list"), ipoNews, { empty: "No IPO news in the last two weeks." });
   $("#ipo-checklist").innerHTML = CHECKLISTS.ipo.map((q) => `<li>${esc(q)}</li>`).join("");
 }
@@ -254,7 +274,7 @@ function renderGuide() {
   $("#guide").innerHTML = `
   <div class="panel">
     <h3>How alerts work</h3>
-    <p>Every 30 minutes the bot reads ${report.feeds_total || "dozens of"} news sources in English and Chinese, keeps only tech, AI, fintech and economy news, groups the same story from different outlets, and gives it a score. You get a notification only when a story scores <b>${t.big} or more</b> (IPO news: <b>${t.ipo}</b>). Quiet days stay quiet.</p>
+    <p>Every 15 minutes the bot reads ${report.feeds_total || "dozens of"} news sources in English and Chinese, keeps only tech, AI, fintech and economy news, groups the same story from different outlets, and gives it a score. You get a notification only when a story scores <b>${t.big} or more</b> (IPO news: <b>${t.ipo}</b>). Quiet days stay quiet.</p>
     <table class="score-table">
       <tr><td>Reported by many outlets (2 / 3–4 / 5–7 / 8+)</td><td>+1 / +2 / +3 / +4</td></tr>
       <tr><td>IPO, earnings, regulation or a deal</td><td>+3</td></tr>
@@ -272,7 +292,7 @@ function renderGuide() {
   </div>
   <div class="panel">
     <h3>Change your settings</h3>
-    <p>Edit the watchlist, alert sensitivity and news searches on GitHub. It works from your phone, and changes apply within 30 minutes.</p>
+    <p>Edit the watchlist, alert sensitivity and news searches on GitHub. It works from your phone, and changes apply within 15 minutes.</p>
     <a class="button-link" href="${edit("config.yml")}" target="_blank" rel="noopener">Edit watchlist &amp; alerts</a>
     <a class="button-link" href="${edit("companies.yml")}" target="_blank" rel="noopener">Add a company</a>
   </div>
@@ -309,6 +329,13 @@ function render() {
   renderGuide();
 }
 
+function setSort(value, save = true) {
+  SORT = value === "important" ? "important" : "newest";
+  for (const b of document.querySelectorAll("[data-sort]")) b.setAttribute("aria-pressed", String(b.dataset.sort === SORT));
+  if (save) store.set("sort", SORT);
+  if (DATA) { renderBig(); renderAll(); }
+}
+
 function showTab(name) {
   for (const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", String(b.dataset.tab === name));
   for (const sec of document.querySelectorAll(".tab")) sec.hidden = sec.id !== `tab-${name}`;
@@ -325,7 +352,7 @@ async function load() {
     if (!DATA) {
       $("#status").textContent = "No data yet";
       $("#big-summary").className = "summary";
-      $("#big-summary").innerHTML = "<strong>Waiting for the first update</strong><p>The news bot runs every 30 minutes. Check back soon.</p>";
+      $("#big-summary").innerHTML = "<strong>Waiting for the first update</strong><p>The news bot runs every 15 minutes. Check back soon.</p>";
     }
   }
 }
@@ -341,6 +368,8 @@ function init() {
     $(id).addEventListener("input", () => DATA && renderAll());
   }
   for (const b of document.querySelectorAll(".tabs button")) b.addEventListener("click", () => showTab(b.dataset.tab));
+  for (const b of document.querySelectorAll("[data-sort]")) b.addEventListener("click", () => setSort(b.dataset.sort));
+  setSort(store.get("sort", "newest"), false);
   document.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-toggle-more]");
     if (!btn) return;
@@ -351,7 +380,7 @@ function init() {
   showTab(store.get("tab", "big"));
   load();
   setInterval(() => { if (!document.hidden) load(); }, 10 * 60 * 1000);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden && DATA && hoursOld(DATA.generated_at) > 0.4) load(); });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && DATA && hoursOld(DATA.generated_at) > 0.25) load(); });
 }
 
 init();

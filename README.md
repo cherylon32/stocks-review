@@ -2,7 +2,7 @@
 
 A free news radar for an investor who doesn't want to read the news all day.
 
-- **Reads the news every 30 minutes**: Google News searches in English and Chinese, CNBC, TechCrunch and the Nasdaq US IPO calendar.
+- **Reads the news every 15 minutes**: Google News searches in English and Chinese, CNBC, TechCrunch and the Nasdaq US IPO calendar.
 - **Keeps only what matters to you**: tech, AI, fintech and economy news, worldwide. US companies in English, Chinese companies in Chinese.
 - **Notifies you only when big news breaks**: a push notification on your phone (or Telegram or email). Quiet days stay quiet.
 - **Dashboard for your phone**: every scored story, an IPO watch page, and a "Before you act" checklist on each big story.
@@ -54,7 +54,7 @@ The first update only records what's already in the news (so you aren't flooded 
 ## How it works
 
 ```
-every 30 min (GitHub Actions)
+every 15 min (GitHub Actions)
   ├─ fetch: Google News (EN + 中文 searches), RSS feeds, Nasdaq IPO calendar
   ├─ filter: keep tech / AI / fintech / economy news; drop clickbait
   ├─ group: same story from different outlets = one story

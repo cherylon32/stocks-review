@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html
 import logging
+from datetime import datetime
 import smtplib
 import ssl
 from dataclasses import dataclass
@@ -23,7 +24,16 @@ class Alert:
     detail: str    # source and why it was flagged
 
 
-def from_story(story: dict) -> Alert:
+def posted_ago(iso: str, now: datetime) -> str:
+    """'posted 25 min ago' style text, so alerts make sense in any time zone."""
+    mins = max(0, round((now - datetime.fromisoformat(iso)).total_seconds() / 60))
+    if mins < 60:
+        return f"posted {mins} min ago" if mins else "posted just now"
+    hours = round(mins / 60)
+    return f"posted {hours} h ago"
+
+
+def from_story(story: dict, now: datetime) -> Alert:
     cats = [c for c in story["categories"] if c != "move"]
     if "ipo" in story["categories"]:
         icon, label = "🆕", CATEGORY_LABELS["ipo"]
@@ -36,7 +46,8 @@ def from_story(story: dict) -> Alert:
     source = story["source"] + (f" + {outlets - 1} more outlets" if outlets > 1 else "")
     why = " · ".join([r for r in story["reasons"] if not r.startswith(("Reported by", "Trusted source"))][:3])
     return Alert(f"{icon} {subject} · {label}", story["title"], story["link"],
-                 f"{source} · score {story['score']:g}" + (f" · {why}" if why else ""))
+                 f"{source} · {posted_ago(story['published'], now)} · score {story['score']:g}"
+                 + (f" · {why}" if why else ""))
 
 
 def from_ipo(row: dict) -> Alert:
@@ -153,7 +164,7 @@ def title_for(alerts: list[Alert]) -> str:
 def welcome(dashboard_url: str) -> Alert:
     return Alert("✅ Stocks Review is running",
                  "You'll get a message here only when big news breaks. Quiet days stay quiet.",
-                 dashboard_url, "Checks the news every 30 minutes")
+                 dashboard_url, "Checks the news every 15 minutes")
 
 
 def test_alert(dashboard_url: str) -> Alert:

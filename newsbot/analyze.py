@@ -366,6 +366,7 @@ def build_story(items: list[dict], cfg: Config) -> dict:
     # News about a company in a language you didn't choose for it (e.g. Chinese coverage of NVIDIA).
     alt = bool(title_companies) and not any(_accepts(c, lead["lang"]) for c in title_companies.values())
     times = [i["_time"] for i in items]
+    newest = max(items, key=lambda i: (i["_time"], i["_trusted"]))
     # Show the most useful other outlets: trusted ones first, one headline per outlet.
     others, seen = [], {lead["source"].lower()}
     for i in sorted(items, key=lambda i: (i["_trusted"], not i["_noise"], i["_time"]), reverse=True):
@@ -395,6 +396,9 @@ def build_story(items: list[dict], cfg: Config) -> dict:
         "alt": alt,
         "more": [{"title": i["title"], "link": i["link"], "source": i["source"], "published": i["published"]}
                  for i in others[:8]],
+        # The most recent report, when it's newer than the headline shown (so you can follow the latest).
+        "newest": None if newest is lead else {"title": newest["title"], "link": newest["link"],
+                                               "source": newest["source"], "published": newest["published"]},
         "_item_ids": [i["id"] for i in items],
         "_title_companies": set(title_companies),
         "_material": bool(cats & MATERIAL),

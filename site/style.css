@@ -110,6 +110,18 @@ details.think li { margin: 4px 0; }
 .filter-row select { font: inherit; font-size: 14px; margin-left: 4px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
 .filter-row .check { display: flex; align-items: center; gap: 6px; }
 .result-count { font-size: 13px; color: var(--muted); margin: 10px 2px 0; }
+.sortbar { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); margin: 0 0 12px; flex-wrap: wrap; }
+.filters .sortbar { margin: 10px 0 0; }
+.sortbar button {
+  font: inherit; font-size: 13px; padding: 5px 11px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+}
+.sortbar button[aria-pressed="true"] { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 600; }
+.posted { white-space: nowrap; }
+.latest-line { margin: 8px 0 0; padding: 8px 10px; background: var(--bg); border-radius: 8px; font-size: 14px; line-height: 1.45; }
+.latest-line a { color: var(--text); }
+.latest-line .src { display: block; font-size: 12px; margin-top: 2px; }
+.tag-latest { background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 700; border-radius: 4px; padding: 1px 6px; margin-right: 4px; text-transform: uppercase; letter-spacing: .03em; }
 
 /* IPO calendar */
 .ipo-group h3 { font-size: 14px; margin: 14px 0 6px; }

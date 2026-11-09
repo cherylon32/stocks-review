@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────
 #  Stocks Review settings
 #  Edit this file on GitHub (pencil icon) — it works from your phone too.
-#  Your changes are picked up on the next update (within 30 minutes).
+#  Your changes are picked up on the next update (within 15 minutes).
 # ─────────────────────────────────────────────────────────────────────
 
 # Companies you own or are watching closely. News about them scores higher,
@@ -18,7 +18,7 @@ alerts:
   big_news_score: 9          # alert me when a story reaches this score
   notable_score: 6           # highlight on the dashboard, but don't alert
   ipo_score: 7               # IPO news alerts at this lower score
-  max_per_run: 4             # at most this many alerts per update (every 30 min)
+  max_per_run: 4             # at most this many alerts per update (every 15 min)
   max_per_day: 10            # ...and at most this many in 24 hours
   max_per_company_per_day: 2 # avoid a flood about one company on a busy day
   max_age_hours: 12          # never alert about news older than this

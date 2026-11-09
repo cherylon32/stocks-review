@@ -68,7 +68,7 @@ def run(args) -> int:
 
     news_alerts = [] if first_run else analyze.select_alerts(stories, state, cfg, now)
     ipo_rows = analyze.ipo_calendar_alerts(calendar, state, cfg, now, quiet=first_run)
-    alerts = [notify.from_story(s) for s in news_alerts] + [notify.from_ipo(r) for r in ipo_rows]
+    alerts = [notify.from_story(s, now) for s in news_alerts] + [notify.from_ipo(r) for r in ipo_rows]
     for s in news_alerts:
         log.info("ALERT %.1f  %s", s["score"], s["title"])
 
