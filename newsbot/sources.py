@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import html
 import logging
 import re
 import time
@@ -101,11 +102,37 @@ def _xml_root(xml_bytes: bytes) -> ET.Element:
         return ET.fromstring(_BARE_AMP.sub(b"&amp;", _BAD_CHARS.sub(b"", xml_bytes)))
 
 
-def parse_feed(xml_bytes: bytes, feed: Feed, now: datetime) -> list[dict]:
-    """Parse RSS 2.0 or Atom into item dicts. Raises ET.ParseError on XML that can't be repaired."""
-    root = _xml_root(xml_bytes)
-    entries = []
+_RSS_ITEM = re.compile(r"<item\b[^>]*>(.*?)</item>", re.S | re.I)
+_CDATA = re.compile(r"<!\[CDATA\[(.*?)\]\]>", re.S)
+
+
+def _lenient_entries(xml_bytes: bytes) -> list[dict]:
+    """Last resort for badly broken RSS: pull fields out of each <item> with patterns instead of a parser."""
+    text = xml_bytes.decode("utf-8", errors="replace")
+
+    def field(block: str, name: str) -> str | None:
+        m = re.search(rf"<{name}\b[^>]*>(.*?)</{name}>", block, re.S | re.I)
+        return _CDATA.sub(lambda c: c.group(1), m.group(1)).strip() if m else None
+
+    return [{
+        "title": field(b, "title"),
+        "link": html.unescape(field(b, "link") or ""),
+        "date": field(b, "pubDate") or field(b, "dc:date"),
+        "summary": field(b, "description"),
+        "source": field(b, "source"),
+    } for b in _RSS_ITEM.findall(text)]
+
+
+def _entries(xml_bytes: bytes) -> list[dict]:
+    try:
+        root = _xml_root(xml_bytes)
+    except ET.ParseError:
+        entries = _lenient_entries(xml_bytes)
+        if not entries:
+            raise
+        return entries
     if root.tag == f"{ATOM}feed":
+        entries = []
         for e in root.findall(f"{ATOM}entry"):
             link_el = e.find(f"{ATOM}link[@rel='alternate']")
             if link_el is None:  # (Elements without children are falsy, so no `or` here)
@@ -117,15 +144,19 @@ def parse_feed(xml_bytes: bytes, feed: Feed, now: datetime) -> list[dict]:
                 "summary": e.findtext(f"{ATOM}summary") or e.findtext(f"{ATOM}content"),
                 "source": None,
             })
-    else:
-        for e in root.iter("item"):
-            entries.append({
-                "title": e.findtext("title"),
-                "link": e.findtext("link"),
-                "date": e.findtext("pubDate") or e.findtext("{http://purl.org/dc/elements/1.1/}date"),
-                "summary": e.findtext("description"),
-                "source": e.findtext("source"),
-            })
+        return entries
+    return [{
+        "title": e.findtext("title"),
+        "link": e.findtext("link"),
+        "date": e.findtext("pubDate") or e.findtext("{http://purl.org/dc/elements/1.1/}date"),
+        "summary": e.findtext("description"),
+        "source": e.findtext("source"),
+    } for e in root.iter("item")]
+
+
+def parse_feed(xml_bytes: bytes, feed: Feed, now: datetime) -> list[dict]:
+    """Parse RSS 2.0 or Atom into item dicts. Raises ET.ParseError only if nothing can be recovered."""
+    entries = _entries(xml_bytes)
 
     items = []
     for entry in entries:

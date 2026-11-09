@@ -319,3 +319,12 @@ def test_single_outlet_ipo_story_does_not_alert(cfg):
     two = analyze.build_stories([item("Stripe files confidentially for IPO", "Reuters", 40),
                                  item("Stripe files confidentially for US IPO", "Bloomberg", 30)], eager)
     assert len(analyze.select_alerts(two, {}, eager, NOW)) == 1
+
+
+def test_badly_broken_rss_still_yields_headlines():
+    feed = config.Feed(url="x", source="36氪", lang="zh", region="CN", label="x")
+    xml = ("<rss><channel><title>36氪</title><item><title><![CDATA[寒武纪股价大涨 <b>AI芯片</b>]]></title>"
+           "<link>https://36kr.com/p/1?a=1&amp;b=2</link><pubDate>Mon, 09 Nov 2026 08:00:00 GMT</pubDate>"
+           "<description><p>unclosed <img src=x></description></item><broken attr=1 2></channel></rss>").encode()
+    [entry] = sources.parse_feed(xml, feed, NOW)
+    assert entry["title"] == "寒武纪股价大涨 AI芯片" and entry["link"] == "https://36kr.com/p/1?a=1&b=2"
