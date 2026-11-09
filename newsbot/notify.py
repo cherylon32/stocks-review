@@ -8,6 +8,7 @@ import smtplib
 import ssl
 from dataclasses import dataclass
 from email.message import EmailMessage
+from email.utils import formataddr
 
 import requests
 
@@ -22,6 +23,7 @@ class Alert:
     headline: str  # the news headline
     link: str
     detail: str    # source and why it was flagged
+    tag: str = ""  # who it's about, e.g. "🔥 NVIDIA" (used to build email subjects)
 
 
 def posted_ago(iso: str, now: datetime) -> str:
@@ -47,7 +49,7 @@ def from_story(story: dict, now: datetime) -> Alert:
     why = " · ".join([r for r in story["reasons"] if not r.startswith(("Reported by", "Trusted source"))][:3])
     return Alert(f"{icon} {subject} · {label}", story["title"], story["link"],
                  f"{source} · {posted_ago(story['published'], now)} · score {story['score']:g}"
-                 + (f" · {why}" if why else ""))
+                 + (f" · {why}" if why else ""), tag=f"{icon} {subject}")
 
 
 def from_ipo(row: dict) -> Alert:
@@ -59,7 +61,8 @@ def from_ipo(row: dict) -> Alert:
         bits.append(f"at ${row['price']} per share")
     if row.get("offer_usd"):
         bits.append(f"raising about ${row['offer_usd'] / 1e6:,.0f}M")
-    return Alert(f"🆕 Upcoming IPO · {row['company']}", " ".join(bits), row["link"], "Nasdaq IPO calendar")
+    return Alert(f"🆕 Upcoming IPO · {row['company']}", " ".join(bits), row["link"], "Nasdaq IPO calendar",
+                 tag=f"🆕 IPO: {row['company']}")
 
 
 class Channels:
@@ -132,22 +135,19 @@ class Channels:
         resp.raise_for_status()
 
     def _send_email(self, alerts: list[Alert], title: str) -> None:
-        esc = html.escape
         msg = EmailMessage()
         msg["Subject"] = title
-        msg["From"] = self.smtp_user
+        msg["From"] = formataddr(("Stocks Review", self.smtp_user))
         msg["To"] = self.email_to
-        lines = [f"{a.heading}\n{a.headline}\n{a.detail}\n{a.link}" for a in alerts]
+        # Ask mail apps to treat it as urgent (Outlook and Apple Mail show a flag; Gmail mostly ignores it).
+        msg["X-Priority"] = "1"
+        msg["Importance"] = "High"
+        lines = [f"{a.heading}\n{a.headline}\n{a.detail}\nRead: {a.link}" for a in alerts]
         if self.dashboard_url:
             lines.append(f"Dashboard: {self.dashboard_url}")
+        lines.append("Not financial advice. Read the article, then decide calmly.")
         msg.set_content("\n\n".join(lines))
-        blocks = "".join(
-            f"<p style='margin:0 0 18px'><b>{esc(a.heading)}</b><br>"
-            f"<a href=\"{esc(a.link, quote=True)}\" style='font-size:16px'>{esc(a.headline)}</a><br>"
-            f"<span style='color:#666'>{esc(a.detail)}</span></p>" for a in alerts)
-        footer = (f"<p><a href=\"{esc(self.dashboard_url, quote=True)}\">Open the dashboard</a></p>"
-                  if self.dashboard_url else "")
-        msg.add_alternative(f"<div style='font-family:sans-serif'>{blocks}{footer}</div>", subtype="html")
+        msg.add_alternative(email_html(alerts, self.dashboard_url), subtype="html")
         host = self.env.get("SMTP_HOST") or "smtp.gmail.com"
         port = int(self.env.get("SMTP_PORT") or 465)
         with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=30) as smtp:
@@ -155,10 +155,38 @@ class Channels:
             smtp.send_message(msg)
 
 
+def email_html(alerts: list[Alert], dashboard_url: str) -> str:
+    """A phone-friendly email: one card per story with a big 'Read the article' button."""
+    esc = html.escape
+    button = ("display:inline-block;padding:10px 16px;border-radius:8px;text-decoration:none;"
+              "font-weight:600;font-size:15px;")
+    cards = "".join(
+        f"<div style='border:1px solid #e3e6eb;border-left:4px solid #b42318;border-radius:10px;"
+        f"padding:14px 16px;margin:0 0 14px'>"
+        f"<div style='font-size:13px;color:#b42318;font-weight:700;margin-bottom:4px'>{esc(a.heading)}</div>"
+        f"<div style='font-size:18px;line-height:1.35;font-weight:600;color:#14171c;margin-bottom:8px'>{esc(a.headline)}</div>"
+        f"<div style='font-size:13px;color:#5b6472;margin-bottom:12px'>{esc(a.detail)}</div>"
+        f"<a href=\"{esc(a.link, quote=True)}\" style='{button}background:#2457d6;color:#ffffff'>Read the article</a>"
+        f"</div>" for a in alerts)
+    footer = (f"<a href=\"{esc(dashboard_url, quote=True)}\" style='{button}background:#e8eefc;color:#2457d6'>"
+              f"Open the dashboard</a>" if dashboard_url else "")
+    return (f"<div style='font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:560px;color:#14171c'>"
+            f"{cards}{footer}<p style='font-size:12px;color:#8a919c;margin-top:16px'>"
+            f"Sent by your Stocks Review bot. Not financial advice: read the article, then decide calmly.</p></div>")
+
+
 def title_for(alerts: list[Alert]) -> str:
+    """Subject line that says what happened, so the phone notification alone tells you the news.
+    Ends with [Stocks Review] so you can filter these emails (e.g. a Gmail filter on that text)."""
     if len(alerts) == 1:
-        return f"Stocks Review: {alerts[0].heading}"
-    return f"Stocks Review: {len(alerts)} big stories"
+        a = alerts[0]
+        text = f"{a.tag}: {a.headline}" if a.tag else f"{a.heading}: {a.headline}"
+    else:
+        names = ", ".join(dict.fromkeys(a.tag.split(" ", 1)[-1] for a in alerts if a.tag))
+        text = f"🔥 {len(alerts)} big stories: {names}"
+    if len(text) > 120:
+        text = text[:117].rstrip() + "…"
+    return f"{text} [Stocks Review]"
 
 
 def welcome(dashboard_url: str) -> Alert:

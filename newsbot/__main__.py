@@ -49,7 +49,7 @@ def run(args) -> int:
     if args.test_notification:
         if not channels.names:
             log.error("No notification channel is configured, so there is nothing to test.")
-        elif not channels.send([notify.test_alert(channels.dashboard_url)], "Stocks Review: test"):
+        elif not channels.send([test := notify.test_alert(channels.dashboard_url)], notify.title_for([test])):
             log.error("Test notification failed on every channel.")
 
     state = store.load_state(data_dir)
@@ -78,7 +78,8 @@ def run(args) -> int:
         store.mute(state, stories, now)
         state["first_run_at"] = now.isoformat(timespec="seconds")
         if channels.names and not args.no_notify:
-            channels.send([notify.welcome(channels.dashboard_url)], "Stocks Review is running")
+            hello = notify.welcome(channels.dashboard_url)
+            channels.send([hello], notify.title_for([hello]))
     elif alerts and not args.no_notify:
         delivered = channels.send(alerts, notify.title_for(alerts)) if channels.names else False
         # Mark as alerted if delivered, or if no channel is set up yet (so you aren't flooded later).

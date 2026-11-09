@@ -243,7 +243,7 @@ def test_full_run_first_quiet_then_alerts(tmp_path, monkeypatch):
     args = ["--data-dir", str(tmp_path), "--config", str(ROOT / "config.yml"), "--companies", str(ROOT / "companies.yml")]
 
     assert cli.main(args) == 0                                  # first run: welcome only
-    assert [t for t, _ in sent] == ["Stocks Review is running"]
+    assert len(sent) == 1 and sent[0][0].startswith("✅ Stocks Review is running") and sent[0][0].endswith("[Stocks Review]")
     assert cli.main(args) == 0                                  # second run: big NVIDIA story
     title, alerts = sent[-1]
     assert "NVIDIA" in title and len(alerts) == 1
@@ -345,3 +345,34 @@ def test_story_points_to_its_newest_report(cfg):
     assert story["newest"]["source"] == "Some Blog"
     [single] = analyze.build_stories([item("Stripe files confidentially for IPO", "Reuters")], cfg)
     assert single["newest"] is None
+
+
+def test_email_subject_carries_the_headline(cfg):
+    stories = analyze.build_stories(big_story_items(), cfg)
+    alert = notify.from_story(next(s for s in stories if "NVIDIA" in s["companies"]), NOW)
+    subject = notify.title_for([alert])
+    assert subject.startswith("🔥 NVIDIA: Nvidia") and subject.endswith("[Stocks Review]") and len(subject) <= 140
+    two = notify.title_for([alert, notify.Alert("x", "y", "z", "w", tag="🔥 Anthropic")])
+    assert two == "🔥 2 big stories: NVIDIA, Anthropic [Stocks Review]"
+
+
+def test_email_message_is_high_priority_with_read_button(monkeypatch):
+    sent = {}
+
+    class FakeSMTP:
+        def __init__(self, *a, **k): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def login(self, user, password): sent["login"] = (user, password)
+        def send_message(self, msg): sent["msg"] = msg
+
+    monkeypatch.setattr(notify.smtplib, "SMTP_SSL", FakeSMTP)
+    ch = notify.Channels({"SMTP_USER": "me@example.com", "SMTP_PASSWORD": "abcd efgh ijkl mnop"}, "https://dash")
+    alert = notify.Alert("🔥 NVIDIA · Big price move", "Nvidia sinks <5%>", "https://news/1", "Reuters · posted 5 min ago", "🔥 NVIDIA")
+    assert ch.names == ["email"]
+    assert ch.send([alert], notify.title_for([alert]))
+    msg = sent["msg"]
+    assert sent["login"] == ("me@example.com", "abcdefghijklmnop")
+    assert msg["X-Priority"] == "1" and msg["To"] == "me@example.com" and "Stocks Review" in msg["From"]
+    html_part = msg.get_body(("html",)).get_content()
+    assert "Read the article" in html_part and "Nvidia sinks &lt;5%&gt;" in html_part and "https://news/1" in html_part

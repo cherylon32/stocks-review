@@ -19,11 +19,18 @@ Dashboard: **https://cherylon32.github.io/stocks-review/** (it works after step 
 
 On GitHub, open this repository's **Settings → Pages**. Under **Build and deployment → Source**, choose **GitHub Actions**.
 
-### 2. Get alerts on your phone (choose one or more)
+### 2. Get alerts (choose one or more)
 
-All of them use **Settings → Secrets and variables → Actions → New repository secret**. Secrets stay private even though the repository is public.
+All of them use **Settings → Secrets and variables → Actions → New repository secret**. Secrets stay private even though the repository is public. Alerts go to every channel you set up.
 
-**ntfy (easiest, recommended)**
+**Email (Gmail)**: each alert email has the company and headline in the subject (e.g. `🔥 NVIDIA: Nvidia shares sink as board launches probe… [Stocks Review]`), is marked high priority, and has a "Read the article" button.
+1. Turn on **2-Step Verification** for your Google account (Google Account → Security).
+2. Create an **App password** at <https://myaccount.google.com/apppasswords>. Name it "Stocks Review" and copy the 16-letter password. This is not your normal Gmail password, and you can delete it any time.
+3. Add two secrets: `SMTP_USER` = your Gmail address, and `SMTP_PASSWORD` = the 16-letter app password.
+4. Optional: add `EMAIL_TO` if alerts should go to a different address than the Gmail that sends them.
+5. To make sure alerts pop up on your phone, turn on notifications in the Gmail app. In Gmail on the web, you can also create a filter for emails whose subject contains `[Stocks Review]` with **Never send it to Spam** and **Always mark it as important**.
+
+**ntfy (phone push without email)**
 1. Install the free **ntfy** app on your phone (search "ntfy" in the App Store or Google Play, or see <https://docs.ntfy.sh/subscribe/phone/>).
 2. Tap **+** and subscribe to a topic name nobody could guess, e.g. `stocks-review-k7f2q9xw`. Anyone who knows the name could read your alerts, so make it random.
 3. Add a secret named `NTFY_TOPIC` whose value is that topic name.
@@ -32,13 +39,9 @@ All of them use **Settings → Secrets and variables → Actions → New reposit
 1. In Telegram, message **@BotFather**, send `/newbot`, and copy the token it gives you into a secret named `TELEGRAM_BOT_TOKEN`.
 2. Send any message to your new bot, then open `https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates` in a browser and find `"chat":{"id":123456789`. Put that number in a secret named `TELEGRAM_CHAT_ID`.
 
-**Email (Gmail)**
-1. Turn on 2-Step Verification for your Google account, then create an **App password** at <https://myaccount.google.com/apppasswords>.
-2. Add the secret `SMTP_USER` (your Gmail address) and the secret `SMTP_PASSWORD` (the 16-character app password). Optionally add `EMAIL_TO` to send to a different address.
-
 ### 3. Test it
 
-Open the **Actions** tab, then **Update news → Run workflow**, tick **Send a test notification**, and click **Run workflow**. A test message should reach your phone within about a minute.
+Open the **Actions** tab, then **Update news → Run workflow**, tick **Send a test notification**, and click **Run workflow**. A test email (or push) should arrive within about a minute. If the run's log says `Sending via email failed`, the app password or Gmail address is wrong.
 
 The first update only records what's already in the news (so you aren't flooded on day one) and sends a "Stocks Review is running" message. Alerts start from the second update.
 
@@ -46,7 +49,7 @@ The first update only records what's already in the news (so you aren't flooded 
 
 ## Everyday use
 
-- **You don't need to open anything.** When a story scores high enough, it pops up on your phone. Tap it to read the article.
+- **You don't need to open anything.** When a story scores high enough, an email (or push) arrives with the headline in the subject. Tap **Read the article**.
 - **Change your watchlist or alert sensitivity** in [`config.yml`](config.yml). You can edit it on GitHub from your phone. Raise `big_news_score` for fewer alerts, or lower it for more.
 - **Track a company the bot doesn't know yet**: add it to the watchlist, or add it with its Chinese name and ticker to [`companies.yml`](companies.yml).
 - The dashboard's **Guide** tab explains how stories are scored and suggests how to turn news into better decisions.
