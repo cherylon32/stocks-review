@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Stocks Review</title>
+  <meta name="description" content="Market-moving tech, AI and fintech news, filtered and scored.">
+  <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232457d6'/%3E%3Cpath d='M7 21l6-6 4 4 8-9' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <div class="brand">
+        <h1>Stocks Review</h1>
+        <p class="tagline">Tech, AI &amp; fintech news that can move your stocks</p>
+      </div>
+      <p class="status" id="status" aria-live="polite">Loading…</p>
+    </div>
+    <nav class="tabs wrap" role="tablist" aria-label="Sections">
+      <button role="tab" data-tab="big" aria-selected="true">Big news <span class="count" id="count-big"></span></button>
+      <button role="tab" data-tab="all" aria-selected="false">All news</button>
+      <button role="tab" data-tab="ipo" aria-selected="false">IPO watch</button>
+      <button role="tab" data-tab="guide" aria-selected="false">Guide</button>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section id="tab-big" class="tab" role="tabpanel">
+      <div id="big-summary" class="summary"></div>
+      <div id="big-list" class="list"></div>
+      <h2 class="section-title" id="notable-title" hidden>Worth a look <span class="hint">notable, not alert-worthy</span></h2>
+      <div id="notable-list" class="list"></div>
+    </section>
+
+    <section id="tab-all" class="tab" role="tabpanel" hidden>
+      <div class="filters">
+        <input type="search" id="q" placeholder="Search headlines or companies…" aria-label="Search">
+        <div class="filter-row">
+          <label>Region
+            <select id="f-region">
+              <option value="">All</option><option value="US">US</option><option value="CN">China / HK</option>
+              <option value="TW">Taiwan</option><option value="ASIA">Rest of Asia</option><option value="EU">Europe</option>
+            </select>
+          </label>
+          <label>Topic
+            <select id="f-topic">
+              <option value="">All</option><option value="move">Big price moves</option><option value="earnings">Earnings</option>
+              <option value="ipo">IPOs</option><option value="regulation">Regulation / legal</option><option value="deal">Deals</option>
+              <option value="leadership">Leadership</option><option value="macro">Economy / rates</option>
+              <option value="analyst">Analyst views</option><option value="product">Products</option>
+            </select>
+          </label>
+          <label>Language
+            <select id="f-lang">
+              <option value="auto">Auto</option><option value="en">English</option><option value="zh">中文</option><option value="any">All</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" id="f-watch"> Watchlist only</label>
+          <label class="check"><input type="checkbox" id="f-important"> Notable+ only</label>
+        </div>
+      </div>
+      <div id="all-list" class="list"></div>
+    </section>
+
+    <section id="tab-ipo" class="tab" role="tabpanel" hidden>
+      <h2 class="section-title">US IPO calendar <span class="hint">from Nasdaq</span></h2>
+      <div id="ipo-calendar"></div>
+      <h2 class="section-title">IPO news <span class="hint">worldwide</span></h2>
+      <div id="ipo-list" class="list"></div>
+      <details class="panel" open>
+        <summary>Before you buy into an IPO</summary>
+        <ul id="ipo-checklist"></ul>
+      </details>
+    </section>
+
+    <section id="tab-guide" class="tab" role="tabpanel" hidden>
+      <div id="guide"></div>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>Headlines link to the original articles. This is a reading aid, not financial advice.</p>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>

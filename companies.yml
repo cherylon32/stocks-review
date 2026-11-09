@@ -1,0 +1,162 @@
+# Companies the bot recognises in headlines: AI, chips, fintech and big tech, worldwide.
+#
+#   tier 1  = giants whose news can move the whole market
+#   tier 2  = other important names
+#   market  = where it is listed (US, CN, HK, TW, JP, KR, SG, EU)
+#   private = not listed yet, so it's an IPO candidate
+#   lang    = which language you prefer for its news: en, zh or both
+#             (default: zh for CN/HK, both for TW, en for everything else)
+#
+# Aliases are matched as whole words (English, case-insensitive; ALL-CAPS tickers
+# and names starting with a lowercase letter must match exactly) or as plain text (Chinese).
+# To add a company, copy a block and edit it.
+
+# ── Tier 1 ────────────────────────────────────────────────────────────
+- { name: NVIDIA, ticker: NVDA, market: US, tier: 1, sector: AI chips,
+    aliases: [Nvidia, NVDA, Jensen Huang, 英伟达, 輝達, 辉达, 黄仁勋, 黃仁勳] }
+- { name: Microsoft, ticker: MSFT, market: US, tier: 1, sector: Software & AI,
+    aliases: [Microsoft, MSFT, Satya Nadella, 微软, 微軟] }
+- { name: Apple, ticker: AAPL, market: US, tier: 1, sector: Consumer tech,
+    aliases: [Apple, AAPL, Tim Cook, 苹果, 蘋果] }
+- { name: Alphabet, ticker: GOOGL, market: US, tier: 1, sector: Internet & AI,
+    aliases: [Alphabet, Google, GOOGL, GOOG, Sundar Pichai, 谷歌, 字母表] }
+- { name: Amazon, ticker: AMZN, market: US, tier: 1, sector: Cloud & e-commerce,
+    aliases: [Amazon, AMZN, AWS, Andy Jassy, 亚马逊, 亞馬遜] }
+- { name: Meta, ticker: META, market: US, tier: 1, sector: Internet & AI,
+    aliases: [Meta, Meta Platforms, Facebook, Mark Zuckerberg, Zuckerberg, 脸书, 臉書] }
+- { name: Tesla, ticker: TSLA, market: US, tier: 1, sector: EV & AI,
+    aliases: [Tesla, TSLA, 特斯拉] }
+- { name: Broadcom, ticker: AVGO, market: US, tier: 1, sector: AI chips,
+    aliases: [Broadcom, AVGO, 博通] }
+- { name: TSMC, ticker: TSM, market: TW, tier: 1, sector: Chipmaking,
+    aliases: [TSMC, Taiwan Semiconductor, 台积电, 台積電] }
+- { name: Samsung Electronics, ticker: '005930.KS', market: KR, tier: 1, sector: Chips & devices,
+    aliases: [Samsung, 三星] }
+- { name: Tencent, ticker: '0700.HK', market: HK, tier: 1, sector: Internet & fintech,
+    aliases: [Tencent, 腾讯, 騰訊, WeChat, 微信支付] }
+- { name: Alibaba, ticker: BABA, market: HK, tier: 1, sector: E-commerce & cloud,
+    aliases: [Alibaba, BABA, 阿里巴巴, 阿里云, 阿里雲, 通义千问, Qwen] }
+- { name: OpenAI, market: US, tier: 1, sector: AI, private: true,
+    aliases: [OpenAI, ChatGPT, Sam Altman] }
+
+# ── Tier 2: US chips, software, AI ────────────────────────────────────
+- { name: AMD, ticker: AMD, market: US, tier: 2, sector: AI chips,
+    aliases: [AMD, Advanced Micro Devices, Lisa Su, 超威] }
+- { name: Intel, ticker: INTC, market: US, tier: 2, sector: Chips,
+    aliases: [Intel, INTC, 英特尔, 英特爾] }
+- { name: Micron, ticker: MU, market: US, tier: 2, sector: Memory chips,
+    aliases: [Micron, 美光] }
+- { name: Qualcomm, ticker: QCOM, market: US, tier: 2, sector: Chips,
+    aliases: [Qualcomm, QCOM, 高通] }
+- { name: Arm Holdings, ticker: ARM, market: US, tier: 2, sector: Chip design,
+    aliases: [Arm Holdings, ARM] }
+- { name: Super Micro, ticker: SMCI, market: US, tier: 2, sector: AI servers,
+    aliases: [Super Micro, Supermicro, SMCI] }
+- { name: CoreWeave, ticker: CRWV, market: US, tier: 2, sector: AI cloud,
+    aliases: [CoreWeave, CRWV] }
+- { name: Oracle, ticker: ORCL, market: US, tier: 2, sector: Cloud & AI,
+    aliases: [Oracle, ORCL, Larry Ellison, 甲骨文] }
+- { name: Palantir, ticker: PLTR, market: US, tier: 2, sector: AI software,
+    aliases: [Palantir, PLTR] }
+- { name: Salesforce, ticker: CRM, market: US, tier: 2, sector: Software,
+    aliases: [Salesforce] }
+- { name: ServiceNow, ticker: NOW, market: US, tier: 2, sector: Software,
+    aliases: [ServiceNow] }
+- { name: Adobe, ticker: ADBE, market: US, tier: 2, sector: Software,
+    aliases: [Adobe, ADBE] }
+- { name: Snowflake, ticker: SNOW, market: US, tier: 2, sector: Data & AI,
+    aliases: [Snowflake] }
+- { name: Shopify, ticker: SHOP, market: US, tier: 2, sector: E-commerce software,
+    aliases: [Shopify] }
+- { name: ASML, ticker: ASML, market: EU, tier: 2, sector: Chip equipment,
+    aliases: [ASML, 阿斯麦] }
+- { name: Anthropic, market: US, tier: 2, sector: AI, private: true,
+    aliases: [Anthropic] }
+- { name: xAI, market: US, tier: 2, sector: AI, private: true,
+    aliases: [xAI] }
+- { name: Databricks, market: US, tier: 2, sector: Data & AI, private: true,
+    aliases: [Databricks] }
+
+# ── Tier 2: fintech and payments ──────────────────────────────────────
+- { name: PayPal, ticker: PYPL, market: US, tier: 2, sector: Payments,
+    aliases: [PayPal, PYPL, Venmo, 贝宝] }
+- { name: Block, ticker: XYZ, market: US, tier: 2, sector: Payments,
+    aliases: [Block Inc, Cash App, Jack Dorsey] }
+- { name: Visa, ticker: V, market: US, tier: 2, sector: Payments,
+    aliases: [Visa Inc, Visa shares, Visa stock, Visa earnings] }
+- { name: Mastercard, ticker: MA, market: US, tier: 2, sector: Payments,
+    aliases: [Mastercard, 万事达] }
+- { name: Robinhood, ticker: HOOD, market: US, tier: 2, sector: Brokerage,
+    aliases: [Robinhood, HOOD] }
+- { name: Coinbase, ticker: COIN, market: US, tier: 2, sector: Crypto exchange,
+    aliases: [Coinbase] }
+- { name: SoFi, ticker: SOFI, market: US, tier: 2, sector: Digital bank,
+    aliases: [SoFi] }
+- { name: Affirm, ticker: AFRM, market: US, tier: 2, sector: Buy now pay later,
+    aliases: [Affirm Holdings, AFRM] }
+- { name: Circle, ticker: CRCL, market: US, tier: 2, sector: Stablecoins,
+    aliases: [Circle Internet, CRCL, USDC] }
+- { name: Chime, ticker: CHYM, market: US, tier: 2, sector: Digital bank,
+    aliases: [Chime Financial, CHYM] }
+- { name: Klarna, ticker: KLAR, market: US, tier: 2, sector: Buy now pay later,
+    aliases: [Klarna] }
+- { name: Nu Holdings, ticker: NU, market: US, tier: 2, sector: Digital bank,
+    aliases: [Nu Holdings, Nubank] }
+- { name: Adyen, ticker: ADYEN.AS, market: EU, tier: 2, sector: Payments,
+    aliases: [Adyen] }
+- { name: Stripe, market: US, tier: 2, sector: Payments, private: true,
+    aliases: [Stripe] }
+- { name: Revolut, market: EU, tier: 2, sector: Digital bank, private: true,
+    aliases: [Revolut] }
+
+# ── Tier 2: Asia ──────────────────────────────────────────────────────
+- { name: SK Hynix, ticker: '000660.KS', market: KR, tier: 2, sector: Memory chips,
+    aliases: [SK Hynix, Hynix, SK海力士] }
+- { name: SoftBank Group, ticker: '9984.T', market: JP, tier: 2, sector: AI investing,
+    aliases: [SoftBank, Masayoshi Son, 软银, 軟銀] }
+- { name: MediaTek, ticker: '2454.TW', market: TW, tier: 2, sector: Chips,
+    aliases: [MediaTek, 联发科, 聯發科] }
+- { name: Foxconn, ticker: '2317.TW', market: TW, tier: 2, sector: AI servers,
+    aliases: [Foxconn, Hon Hai, 鸿海, 鴻海, 富士康] }
+- { name: Sea Ltd, ticker: SE, market: SG, tier: 2, sector: E-commerce & fintech,
+    aliases: [Sea Ltd, Sea Limited, Shopee] }
+- { name: Grab, ticker: GRAB, market: SG, tier: 2, sector: Super-app & fintech,
+    aliases: [Grab Holdings, GRAB] }
+- { name: Baidu, ticker: BIDU, market: CN, tier: 2, sector: AI & search,
+    aliases: [Baidu, BIDU, 百度, 文心一言] }
+- { name: JD.com, ticker: JD, market: CN, tier: 2, sector: E-commerce,
+    aliases: [JD.com, 京东, 京東] }
+- { name: Meituan, ticker: '3690.HK', market: HK, tier: 2, sector: Local services,
+    aliases: [Meituan, 美团, 美團] }
+- { name: PDD Holdings, ticker: PDD, market: CN, tier: 2, sector: E-commerce,
+    aliases: [PDD, Pinduoduo, Temu, 拼多多] }
+- { name: Xiaomi, ticker: '1810.HK', market: HK, tier: 2, sector: Devices & EV,
+    aliases: [Xiaomi, 小米集团, 小米, 雷军] }
+- { name: BYD, ticker: '1211.HK', market: HK, tier: 2, sector: EV & batteries,
+    aliases: [BYD, 比亚迪, 比亞迪] }
+- { name: SMIC, ticker: '0981.HK', market: HK, tier: 2, sector: Chipmaking,
+    aliases: [SMIC, 中芯国际, 中芯國際] }
+- { name: Cambricon, ticker: '688256.SS', market: CN, tier: 2, sector: AI chips,
+    aliases: [Cambricon, 寒武纪, 寒武紀] }
+- { name: Lenovo, ticker: '0992.HK', market: HK, tier: 2, sector: PCs & AI servers,
+    aliases: [Lenovo, 联想, 聯想] }
+- { name: NetEase, ticker: NTES, market: CN, tier: 2, sector: Games,
+    aliases: [NetEase, 网易, 網易] }
+- { name: Kuaishou, ticker: '1024.HK', market: HK, tier: 2, sector: Video & AI,
+    aliases: [Kuaishou, 快手, 可灵] }
+- { name: Futu, ticker: FUTU, market: CN, tier: 2, sector: Brokerage,
+    aliases: [Futu, moomoo, 富途] }
+- { name: UP Fintech, ticker: TIGR, market: CN, tier: 2, sector: Brokerage,
+    aliases: [UP Fintech, Tiger Brokers, 老虎证券, 老虎證券] }
+- { name: Zhipu AI, market: CN, tier: 2, sector: AI,
+    aliases: [Zhipu, 智谱, 智譜] }
+- { name: MiniMax, market: CN, tier: 2, sector: AI,
+    aliases: [MiniMax, 稀宇科技] }
+- { name: Huawei, market: CN, tier: 2, sector: Chips & devices, private: true,
+    aliases: [Huawei, 华为, 華為, 昇腾] }
+- { name: ByteDance, market: CN, tier: 2, sector: Internet & AI, private: true,
+    aliases: [ByteDance, TikTok, 字节跳动, 字節跳動, 抖音] }
+- { name: Ant Group, market: CN, tier: 2, sector: Fintech, private: true,
+    aliases: [Ant Group, Alipay, 蚂蚁集团, 螞蟻集團, 支付宝, 支付寶] }
+- { name: DeepSeek, market: CN, tier: 2, sector: AI, private: true,
+    aliases: [DeepSeek, 深度求索] }

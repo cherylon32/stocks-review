@@ -1,0 +1,68 @@
+# ─────────────────────────────────────────────────────────────────────
+#  Stocks Review settings
+#  Edit this file on GitHub (pencil icon) — it works from your phone too.
+#  Your changes are picked up on the next update (within 30 minutes).
+# ─────────────────────────────────────────────────────────────────────
+
+# Companies you own or are watching closely. News about them scores higher,
+# and they are searched for on every update.
+# Use a name, ticker or Chinese name from companies.yml (e.g. NVIDIA, NVDA, 腾讯).
+# A name that is not in companies.yml is still tracked exactly as you type it.
+watchlist:
+  - NVIDIA
+  - TSMC
+  - Tencent
+
+alerts:
+  # Every story gets a score (see the Guide tab on the dashboard for how).
+  big_news_score: 8          # alert me when a story reaches this score
+  notable_score: 5           # highlight on the dashboard, but don't alert
+  ipo_score: 6               # IPO news alerts at this lower score
+  max_per_run: 4             # at most this many alerts per update (every 30 min)
+  max_per_day: 10            # ...and at most this many in 24 hours
+  max_per_company_per_day: 2 # avoid a flood about one company on a busy day
+  max_age_hours: 12          # never alert about news older than this
+  # US IPO calendar: alert when a tech/fintech/AI company is about to list
+  # and plans to raise at least this many US dollars.
+  ipo_calendar_min_offer_usd: 100000000
+
+# How many days of news the dashboard keeps.
+keep_days: 14
+
+# Google News searches. lang is one of: en-US, en-SG, zh-CN, zh-HK, zh-TW.
+# Use OR (capitals) between alternatives and "quotes" for exact phrases.
+# Your watchlist is searched automatically, so you don't need to add it here.
+searches:
+  # English — US and global
+  - { q: 'Nvidia OR TSMC OR Broadcom OR AMD OR Micron shares', lang: en-US }
+  - { q: 'Microsoft OR Alphabet OR Amazon OR Meta OR Apple shares', lang: en-US }
+  - { q: 'Tesla OR Palantir OR Oracle OR CoreWeave OR "Super Micro" shares', lang: en-US }
+  - { q: '"AI stocks" OR "chip stocks" OR "tech stocks" OR Nasdaq', lang: en-US }
+  - { q: 'OpenAI OR Anthropic OR xAI OR Databricks OR DeepSeek', lang: en-US }
+  - { q: 'fintech OR PayPal OR Robinhood OR Coinbase OR Klarna OR Stripe OR Revolut', lang: en-US }
+  - { q: '"tech IPO" OR "AI IPO" OR "fintech IPO" OR "files for IPO" OR "IPO pricing"', lang: en-US }
+  - { q: '"Federal Reserve" OR inflation OR "rate cut" OR tariffs stocks', lang: en-US }
+  - { q: '"export controls" chips OR semiconductors', lang: en-US }
+  - { q: 'Samsung OR "SK Hynix" OR SoftBank OR ASML shares', lang: en-US }
+  # English — Southeast Asia
+  - { q: 'Grab OR "Sea Ltd" OR "Asia tech stocks" OR "Hang Seng Tech"', lang: en-SG }
+  # 中文 — 中国大陆 / 香港 / 台湾
+  - { q: '芯片 OR 半导体 OR 中芯国际 OR 寒武纪 股价', lang: zh-CN }
+  - { q: '腾讯 OR 阿里巴巴 OR 百度 OR 小米 OR 美团 OR 京东 股价', lang: zh-CN }
+  - { q: '人工智能 OR 大模型 OR DeepSeek 概念股', lang: zh-CN }
+  - { q: '港股 IPO OR 科创板 上市 OR 招股 科技', lang: zh-CN }
+  - { q: '金融科技 OR 蚂蚁集团 OR 富途 OR 支付宝', lang: zh-CN }
+  - { q: '央行 降准 OR 降息 OR 证监会 OR 稳增长', lang: zh-CN }
+  - { q: '恒生科技 OR 港股 科技股', lang: zh-HK }
+  - { q: '台積電 OR 聯發科 OR 鴻海 股價', lang: zh-TW }
+
+# Other news feeds (RSS). Add any feed URL you like.
+feeds:
+  - { name: CNBC, url: 'https://www.cnbc.com/id/19854910/device/rss/rss.html', lang: en, region: US }
+  - { name: CNBC, url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html', lang: en, region: US }
+  - { name: TechCrunch, url: 'https://techcrunch.com/category/fintech/feed/', lang: en, region: Global }
+  - { name: TechCrunch, url: 'https://techcrunch.com/category/artificial-intelligence/feed/', lang: en, region: Global }
+  - { name: 36氪, url: 'https://36kr.com/feed', lang: zh, region: CN }
+
+# US IPO calendar from Nasdaq (upcoming, recently priced and newly filed IPOs).
+ipo_calendar: true
