@@ -439,3 +439,34 @@ def test_week_old_items_kept_only_for_week_long_searches():
     day = sources.google_news_feed('"TNG Digital"', "en-MY")
     assert len(sources.parse_feed(xml, week, NOW)) == 1
     assert sources.parse_feed(xml, day, NOW) == []
+
+
+@pytest.mark.parametrize("text", [
+    "JPMorgan lowers ViaSat stock price target to $120 on valuation",
+    "JPMorgan drops Alphabet from focus list, adds Meta",
+    "JPM Expects M&A Slowdown in 2027",
+    "Semiconductor earnings sugar rush likely to fade, says JPMorgan",
+    "DraftKings faces downgrades — JPMorgan says it's increasingly difficult",
+    "Weekly Recap: JPMorgan cuts target and Tradegate shares rise",
+    "Startup hires Goldman Sachs and JPMorgan for US IPO",
+    "光测试龙头选定中信证券、高盛、摩根大通筹备港股IPO",
+    "REG - JPMorgan Asset Mngt SThree plc - Form 8.3",
+])
+def test_jpmorgan_as_commentator_or_adviser_is_not_jpmorgan_news(cfg, text):
+    jpm = next(c for c in cfg.companies if c.name == "JPMorgan")
+    assert not jpm.found_in(text)
+
+
+@pytest.mark.parametrize("text", [
+    "JPMorgan Stock Slides on Epstein Probe Fears",
+    "JPMorgan third-quarter profit beats estimates",
+    "OpenAI announces partnership with JPMorgan",
+    "摩根大通第三季度净利增长",
+])
+def test_jpmorgan_own_news_still_matches(cfg, text):
+    assert next(c for c in cfg.companies if c.name == "JPMorgan").found_in(text)
+
+
+def test_valuation_word_alone_is_not_a_deal():
+    assert "deal" not in analyze.categories_for("Broker lowers Nvidia price target on valuation")
+    assert "deal" in analyze.categories_for("OpenAI secures $11bn in funding round with $1.25tn valuation")

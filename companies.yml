@@ -91,6 +91,12 @@
   ignore:
     - 'J\.?\s?P\.?\s?Morgan(?: Chase)?(?:''s|’s)?(?: \w+)? (?:analysts?|strategists?|economists?|sees|expects|predicts|forecasts|upgrades?|downgrades?|initiates|reiterates|is (?:bullish|bearish))\b'
     - '(?:according to|from|by|per) J\.?\s?P\.?\s?Morgan\b'
+    - '(?:J\.?\s?P\.?\s?Morgan|\bJPM\b).*\b(?:price target|focus list|top picks?|ratings?|overweight|underweight|neutral|initiates?|reiterates?|expects|sees)\b'
+    - 'JPMorgan Asset|Form 8\.3'
+    - '(?:says|said) J\.?\s?P\.?\s?Morgan\b|J\.?\s?P\.?\s?Morgan (?:says|said)\b'
+    - 'J\.?\s?P\.?\s?Morgan (?:cuts|raises|lifts|lowers|trims|boosts) (?:\w+ ){0,3}(?:price )?target'
+    - '(?:hires?|picks?|taps?|selects?|mandates?)\b.{0,40}J\.?\s?P\.?\s?Morgan|J\.?\s?P\.?\s?Morgan.{0,40}\b(?:underwrit|bookrunner|lead manager)'
+    - '(?:选定|選定|聘请|聘請|委任).{0,20}摩根大通|摩根大通.{0,6}(?:保荐|保薦|承销|承銷|联席|聯席)'
     - '(?:摩根大通|小摩)(?:[：:]|指|料|预计|預計|认为|認為|看好|上调|上調|下调|下調|评级|評級|目标价|目標價)'
 - { name: MoneyLion, market: US, tier: 2, sector: Fintech app (owned by Gen Digital since 2025),
     aliases: [MoneyLion], search: '"MoneyLion"' }

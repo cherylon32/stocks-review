@@ -52,7 +52,8 @@ _EN = {
                   r"|\bbann?(?:ed|s)?\b|\blawsuits?\b|\bsue[sd]?\b|\bfined\b|\bfines\b|\bregulators?\b"
                   r"|\bcrackdown\b|\bDOJ\b|\bFTC\b|\bentity list\b",
     "deal": r"\bacqui(?:re[sd]?|ring|sitions?)\b|\bmergers?\b|\btakeover\b|\bbuyout\b|\bstake\b"
-            r"|\bto buy\b|\bdeal (?:to|for|with)\b|\bfunding round\b|\braises? \$|\bvaluation\b",
+            r"|\bto buy\b|\bdeal (?:to|for|with)\b|\bfunding round\b|\braises? \$"
+            r"|\$[\d.,]+ ?(?:billion|bn|trillion|tn|[bt])?\s+valuation\b|\bvaluation of \$|\bvalued at \$",
     # A change at the top, not every headline that mentions a CEO.
     "leadership": r"\bresign(?:s|ed|ation)?\b|\bsteps? down\b|\bstepping down\b|\bappoint(?:s|ed|ment)?\b"
                   r"|\bsuccessor\b|\bsuccession\b|\bousted\b|\bnew (?:CEO|chief executive|CFO|chairman)\b"
@@ -105,11 +106,12 @@ NOISE = re.compile(
     r"|\b\d+ (?:top |best |great |magnificent |growth |dividend |ai |tech )?stocks?\b"
     r"|\bhere's (?:what|how)\b|\bwhat history says\b|\bwhat smart people\b|\bstock forecast\b"
     r"|\bprice prediction\b|\bnet worth\b|\blive charts?\b|\bmarketcap\b|\bremains? a buy\b"
+    r"|\bForm 8\.3\b|^REG\b"
     r"|牛股|必看|速看|揭秘|收评|午评|早评|盘前必读|龙虎榜|个股异动|股价行情|股票股价|行情_|_资讯|爆料|甜甜價", re.I)
 # Market round-ups mention many companies in passing; they shouldn't count as news about each one.
 WRAP = re.compile(
     r"\b(?:stock|equity|index|Nasdaq|Dow|S&P(?: 500)?) futures\b|\bWall St(?:reet)?\b|\bpre-?market\b"
-    r"|\bstock market today\b|\bmarkets? (?:wrap|today|live|talk)\b|\bwhat to watch\b|\bweekly .{0,30}outlook\b"
+    r"|\bstock market today\b|\bmarkets? (?:wrap|today|live|talk)\b|\bwhat to watch\b|\bweekly .{0,30}outlook\b|\bweekly recap\b"
     r"|\bFirst Thing\b|\b(?:Asian|European|world|global) (?:markets|equities|stocks|shares)\b|\bDaily \w+ \d{1,2}\b"
     r"|\b(?:KOSPI|Nikkei|Hang Seng Index|TAIEX|Taiex|ASX|FTSE|DAX|Sensex|Nifty|FBM KLCI|KLCI)\b"
     r"|\bBursa Malaysia (?:opens|closes|ends|extends|snaps|edges|slips|rises|falls|higher|lower|mixed)\b"
