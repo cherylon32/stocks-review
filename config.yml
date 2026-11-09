@@ -15,9 +15,9 @@ watchlist:
 
 alerts:
   # Every story gets a score (see the Guide tab on the dashboard for how).
-  big_news_score: 8          # alert me when a story reaches this score
-  notable_score: 5           # highlight on the dashboard, but don't alert
-  ipo_score: 6               # IPO news alerts at this lower score
+  big_news_score: 9          # alert me when a story reaches this score
+  notable_score: 6           # highlight on the dashboard, but don't alert
+  ipo_score: 7               # IPO news alerts at this lower score
   max_per_run: 4             # at most this many alerts per update (every 30 min)
   max_per_day: 10            # ...and at most this many in 24 hours
   max_per_company_per_day: 2 # avoid a flood about one company on a busy day

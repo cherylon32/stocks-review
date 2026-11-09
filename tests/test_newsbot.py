@@ -251,3 +251,71 @@ def test_full_run_first_quiet_then_alerts(tmp_path, monkeypatch):
     nvda = next(s for s in data["stories"] if "NVIDIA" in s["companies"])
     assert nvda["alerted"] and nvda["level"] == "big"
     assert not any(k.startswith("_") for s in data["stories"] for k in s)
+
+
+# ── rules tuned on real headlines ─────────────────────────────────────
+
+@pytest.mark.parametrize("title, expected", [
+    ("Nvidia CEO Jensen Huang calls US chip restrictions on China a mistake", False),
+    ("Intel CEO resigns after board clash", True),
+    ("Apple names John Ternus as new CEO", True),
+    ("小米集团总裁卸任", True),
+])
+def test_leadership_means_a_change_at_the_top(title, expected):
+    assert ("leadership" in analyze.categories_for(title)) is expected
+
+
+def test_questions_and_round_ups_score_lower(cfg):
+    news = analyze.tag_item(item("Nvidia shares tumble 7% after warning", "Reuters"), cfg)["_score"]
+    question = analyze.tag_item(item("Is Nvidia stock a buy after its 7% tumble?", "Reuters"), cfg)["_score"]
+    explainer = analyze.tag_item(item("Why Nvidia shares tumbled 7% today", "Reuters"), cfg)["_score"]
+    round_up = analyze.tag_item(item("Stock futures steady but Nvidia shares tumble 7%", "Reuters"), cfg)["_score"]
+    assert question < news and explainer < news and round_up < news
+
+
+def test_quote_pages_are_noise():
+    assert analyze.is_noise("腾讯控股(00700)股票股价_股价行情_讨论_资讯", "某网站")
+    assert analyze.is_noise("Amkor Technology xStock Price, Live Charts, and Marketcap", "Coinbase")
+
+
+def test_one_outlet_is_never_big(cfg):
+    [story] = analyze.build_stories([item("Nvidia shares plunge 12% as US bans chip sales to China", "Reuters")], cfg)
+    assert story["score"] >= cfg.alerts["big_news_score"] and story["level"] == "notable"
+
+
+def test_differently_worded_headlines_about_one_event_are_merged(cfg):
+    stories = analyze.build_stories([
+        item("Nvidia board launches probe into Jensen Huang after alleged affair with Chinese spy", "Reuters", 90),
+        item("Nvidia board launches independent probe into CEO Jensen Huang over spy affair", "CNBC", 80),
+        item("Jensen Huang affair: Nvidia board probe into alleged Chinese spy link", "Bloomberg", 70),
+        item("Nvidia shares fall as board probes Jensen Huang affair with alleged spy", "WSJ", 60),
+        item("Nvidia probes Jensen Huang's affair with alleged Chinese spy, shares slide", "Barron's", 50),
+        item("Microsoft unveils new AI model for Office", "The Verge", 40),
+    ], cfg)
+    nvda = [s for s in stories if "NVIDIA" in s["companies"]]
+    assert len(nvda) == 1 and nvda[0]["outlets"] == 5
+
+
+def test_story_categories_ignore_stray_words(cfg):
+    items = [item(f"Nvidia board probes Jensen Huang over spy claims {n}", src, 60 - n)
+             for n, src in enumerate(["Reuters", "CNBC", "Bloomberg", "WSJ", "AP News", "Axios"])]
+    items.append(item("Nvidia board probes Jensen Huang over spy claims, may launch new chip", "Blog", 1))
+    [story] = analyze.build_stories(items, cfg)
+    assert "regulation" in story["categories"] and "product" not in story["categories"]
+
+
+def test_broken_xml_is_repaired():
+    feed = config.Feed(url="x", source="36氪", lang="zh", region="CN", label="x")
+    xml = ("<rss><channel><item><title>寒武纪 & 芯片\x0b 大涨</title><link>https://36kr.com/p/1?a=1&b=2</link>"
+           "<pubDate>Mon, 09 Nov 2026 08:00:00 GMT</pubDate></item></channel></rss>").encode()
+    [entry] = sources.parse_feed(xml, feed, NOW)
+    assert entry["title"] == "寒武纪 & 芯片 大涨" and entry["link"] == "https://36kr.com/p/1?a=1&b=2"
+
+
+def test_single_outlet_ipo_story_does_not_alert(cfg):
+    eager = config.Config(**{**cfg.__dict__, "alerts": {**cfg.alerts, "ipo_score": 5}})
+    one = analyze.build_stories([item("Stripe files confidentially for IPO", "Reuters")], eager)
+    assert one[0]["score"] >= 5 and analyze.select_alerts(one, {}, eager, NOW) == []
+    two = analyze.build_stories([item("Stripe files confidentially for IPO", "Reuters", 40),
+                                 item("Stripe files confidentially for US IPO", "Bloomberg", 30)], eager)
+    assert len(analyze.select_alerts(two, {}, eager, NOW)) == 1

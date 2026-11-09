@@ -94,8 +94,12 @@ main { padding-top: 16px; padding-bottom: 24px; }
 .more-list { margin: 8px 0 0; padding-left: 18px; font-size: 14px; }
 .more-list li { margin: 4px 0; }
 .more-list .src { margin-left: 4px; }
-details.think { margin-top: 8px; font-size: 14px; }
-details.think summary, .panel summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+details.think, details.related { margin-top: 8px; font-size: 14px; }
+details.think summary, details.related summary, .panel summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+details.related { border-top: 1px solid var(--border); padding-top: 8px; }
+details.related ul { margin: 6px 0 0; padding-left: 18px; }
+details.related li { margin: 6px 0; }
+details.related .src { display: block; font-size: 12px; }
 details.think ul { margin: 6px 0 0; padding-left: 18px; }
 details.think li { margin: 4px 0; }
 

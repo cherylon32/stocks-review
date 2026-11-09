@@ -100,7 +100,29 @@ function checklistFor(s) {
   return items;
 }
 
-function storyCard(s) {
+// One card per company: the strongest story, with that company's other stories folded underneath.
+function groupByCompany(stories) {
+  const groups = new Map();
+  for (const s of stories) {
+    const key = s.companies[0] || s.id;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(s);
+  }
+  return [...groups.entries()].map(([key, list]) => {
+    list.sort((a, b) => b.score - a.score);
+    return { key, lead: list[0], rest: list.slice(1), latest: list.reduce((m, s) => (s.latest > m ? s.latest : m), "") };
+  });
+}
+
+function relatedList(group, label) {
+  if (!group.rest.length) return "";
+  const named = group.lead.companies[0] ? ` about ${esc(group.key)}` : "";
+  return `<details class="related"><summary>${group.rest.length} more ${label}${named}</summary><ul>${group.rest.map((s) =>
+    `<li><a href="${esc(s.link)}" target="_blank" rel="noopener">${esc(s.title)}</a>
+      <span class="src">${esc(s.source)}${s.outlets > 1 ? ` +${s.outlets - 1}` : ""} · ${ago(s.latest)} · score ${s.score}</span></li>`).join("")}</ul></details>`;
+}
+
+function storyCard(s, extra = "") {
   const watch = new Set(DATA.watchlist);
   const levelText = { big: "Big", notable: "Notable", normal: "Score" }[s.level];
   const companies = s.companies.slice(0, 4).map((c) =>
@@ -128,6 +150,7 @@ function storyCard(s) {
     ${reasons.length ? `<p class="why"><b>Why it's here:</b> ${esc(reasons.join(" · "))}</p>` : ""}
     ${checklist.length ? `<details class="think"><summary>Before you act</summary><ul>${checklist.map((q) => `<li>${esc(q)}</li>`).join("")}</ul></details>` : ""}
     ${moreList}
+    ${extra}
   </article>`;
 }
 
@@ -149,26 +172,35 @@ function visibleByLanguage(s, mode) {
   return s.lang === mode;
 }
 
+function renderGroups(el, groups, label, empty) {
+  el.innerHTML = groups.length
+    ? groups.map((g) => storyCard(g.lead, relatedList(g, label))).join("")
+    : (empty ? `<p class="empty">${esc(empty)}</p>` : "");
+}
+
 function renderBig() {
-  const recentBig = DATA.stories.filter((s) => s.level === "big" && !s.alt_dup && hoursOld(s.latest) <= 72)
-    .sort((a, b) => b.latest.localeCompare(a.latest));
-  const last24 = recentBig.filter((s) => hoursOld(s.latest) <= 24);
-  $("#count-big").textContent = last24.length || "";
+  const recentBig = DATA.stories.filter((s) => s.level === "big" && !s.alt_dup && hoursOld(s.latest) <= 72);
+  const groups = groupByCompany(recentBig).sort((a, b) => b.latest.localeCompare(a.latest));
+  const today = groups.filter((g) => hoursOld(g.latest) <= 24);
+  $("#count-big").textContent = today.length || "";
   const summary = $("#big-summary");
-  if (last24.length) {
+  if (today.length) {
+    const names = today.map((g) => (g.lead.companies[0] ? g.key : "the economy")).slice(0, 4).join(", ");
     summary.className = "summary";
-    summary.innerHTML = `<strong>${last24.length} big ${last24.length === 1 ? "story" : "stories"} in the last 24 hours</strong>
+    summary.innerHTML = `<strong>Big news in the last 24 hours: ${esc(names)}</strong>
       <p>Read the headline, then open “Before you act”. You don't need to decide anything today.</p>`;
   } else {
     summary.className = "summary calm";
     summary.innerHTML = `<strong>No big news in the last 24 hours</strong>
       <p>Nothing that needs your attention. Quiet days are normal.</p>`;
   }
-  renderList($("#big-list"), recentBig, { empty: "No big stories in the last 3 days." });
-  const notable = DATA.stories.filter((s) => s.level === "notable" && !s.alt_dup && hoursOld(s.latest) <= 24)
-    .sort((a, b) => b.score - a.score).slice(0, 15);
-  $("#notable-title").hidden = !notable.length;
-  renderList($("#notable-list"), notable, { empty: "" });
+  renderGroups($("#big-list"), groups, "big stories", "No big stories in the last 3 days.");
+  const shownBig = new Set(groups.map((g) => g.key));
+  const notable = DATA.stories.filter((s) => s.level === "notable" && !s.alt_dup && hoursOld(s.latest) <= 24);
+  const notableGroups = groupByCompany(notable).filter((g) => !shownBig.has(g.key))
+    .sort((a, b) => b.lead.score - a.lead.score).slice(0, 10);
+  $("#notable-title").hidden = !notableGroups.length;
+  renderGroups($("#notable-list"), notableGroups, "stories", "");
 }
 
 function renderAll() {
@@ -232,9 +264,11 @@ function renderGuide() {
       <tr><td>Market heavyweight (NVIDIA, TSMC, Tencent…) / other tracked company</td><td>+3 / +2</td></tr>
       <tr><td>On your watchlist (${esc(DATA.watchlist.join(", ")) || "empty"})</td><td>+2</td></tr>
       <tr><td>Well-known outlet (Reuters, Bloomberg, 财新…)</td><td>+1</td></tr>
-      <tr><td>Clickbait (“3 AI stocks to buy now”)</td><td>−4</td></tr>
+      <tr><td>Question or explainer headline (“Is Nvidia a buy?”, “Why X fell”)</td><td>−2</td></tr>
+      <tr><td>Market round-up (“Stock futures…”, “KOSPI rebounds…”)</td><td>−2</td></tr>
+      <tr><td>Clickbait, quote pages, auto-generated stock screens</td><td>−4</td></tr>
     </table>
-    <p>Product launches and analyst opinions alone never trigger an alert. News about Chinese companies is shown in Chinese and news about US companies in English; duplicates in the other language are hidden (switch Language to “All” to see them).</p>
+    <p>A story counts as big only if at least two outlets report it and it's a real event: product launches and analyst opinions alone never trigger an alert. Headlines about the same event are grouped into one story, and the Big news tab shows one card per company. News about Chinese companies is shown in Chinese and news about US companies in English; duplicates in the other language are hidden (switch Language to “All” to see them).</p>
   </div>
   <div class="panel">
     <h3>Change your settings</h3>

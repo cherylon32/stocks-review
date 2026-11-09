@@ -89,9 +89,21 @@ def item_id(link: str, title: str) -> str:
     return hashlib.sha1((link or title).encode("utf-8")).hexdigest()[:16]
 
 
+_BAD_CHARS = re.compile(rb"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+_BARE_AMP = re.compile(rb"&(?!(?:[a-zA-Z][a-zA-Z0-9]{1,31}|#[0-9]{1,7}|#x[0-9a-fA-F]{1,6});)")
+
+
+def _xml_root(xml_bytes: bytes) -> ET.Element:
+    """Parse XML, repairing the two most common feed mistakes (control characters and bare '&')."""
+    try:
+        return ET.fromstring(xml_bytes)
+    except ET.ParseError:
+        return ET.fromstring(_BARE_AMP.sub(b"&amp;", _BAD_CHARS.sub(b"", xml_bytes)))
+
+
 def parse_feed(xml_bytes: bytes, feed: Feed, now: datetime) -> list[dict]:
-    """Parse RSS 2.0 or Atom into item dicts. Raises ET.ParseError on broken XML."""
-    root = ET.fromstring(xml_bytes)
+    """Parse RSS 2.0 or Atom into item dicts. Raises ET.ParseError on XML that can't be repaired."""
+    root = _xml_root(xml_bytes)
     entries = []
     if root.tag == f"{ATOM}feed":
         for e in root.findall(f"{ATOM}entry"):

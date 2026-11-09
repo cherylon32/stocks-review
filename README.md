@@ -59,7 +59,7 @@ every 30 min (GitHub Actions)
   ├─ filter: keep tech / AI / fintech / economy news; drop clickbait
   ├─ group: same story from different outlets = one story
   ├─ score: event type + price move + company + outlet count + source  (see Guide tab)
-  ├─ alert: score ≥ 8 (IPO ≥ 6), at most 4 per update / 10 per day / 2 per company per day
+  ├─ alert: score ≥ 9 (IPO ≥ 7), at most 4 per update / 10 per day / 2 per company per day
   └─ publish: dashboard on GitHub Pages; history kept on the news-data branch (14 days)
 ```
 

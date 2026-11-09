@@ -11,9 +11,9 @@ ZH_MARKETS = {"CN", "HK"}
 BOTH_MARKETS = {"TW"}
 
 DEFAULT_ALERTS = {
-    "big_news_score": 8,
-    "notable_score": 5,
-    "ipo_score": 6,
+    "big_news_score": 9,
+    "notable_score": 6,
+    "ipo_score": 7,
     "max_per_run": 4,
     "max_per_day": 10,
     "max_per_company_per_day": 2,

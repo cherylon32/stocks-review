@@ -8,10 +8,15 @@ its strongest headline plus a bonus for how many different outlets are reporting
   company        market heavyweight +3, other tracked company +2, on your watchlist +2 more
   source         well-known outlet (Reuters, Bloomberg, 财新 …) .............................. +1
   coverage       2 outlets +1, 3-4 +2, 5-7 +3, 8+ +4
-  clickbait      "3 AI stocks to buy now" ................................................. -4
+  question       "Is Nvidia a buy?", "Why X stock fell" ...................................... -2
+  round-up       "Stock futures…", "KOSPI rebounds…" ........................................ -2
+  clickbait      "3 AI stocks to buy now", quote pages, auto-generated screens .............. -4
+
+A story is "big" only with at least two outlets and a real event (not just a product or analyst note).
 """
 from __future__ import annotations
 
+import math
 import re
 from collections import Counter
 from datetime import datetime, timedelta
@@ -37,7 +42,8 @@ _EN = {
            r"|\b(?:market|trading|stock market|Nasdaq|NYSE|Hong Kong) debut\b|\bdirect listing\b"
            r"|\bS-1\b|\bF-1\b|\bSPAC\b|\blisting (?:plan|application|debut)\b"
            r"|\bfiles? (?:confidentially )?(?:for|to) (?:an? )?(?:IPO|list)",
-    "earnings": r"\bearnings\b|\bresults\b|\brevenue\b|\bprofits?\b|\bEPS\b|\bguidance\b|\boutlook\b"
+    "earnings": r"\bearnings\b|\b(?:quarterly|financial|annual|Q[1-4]|(?:first|second|third|fourth)-quarter) results\b"
+                r"|\bresults (?:beat|miss|top)\b|\brevenue\b|\bprofits?\b|\bEPS\b|\bguidance\b|\boutlook\b"
                 r"|\bforecasts?\b|\b(?:beats?|miss(?:es|ed)?) (?:estimates|expectations|forecasts)\b"
                 r"|\bquarterly\b|\bQ[1-4]\b",
     "regulation": r"\bexport (?:bans?|controls?|curbs?|restrictions?|licen[cs]es?|rules?)\b"
@@ -46,8 +52,11 @@ _EN = {
                   r"|\bcrackdown\b|\bDOJ\b|\bFTC\b|\bentity list\b",
     "deal": r"\bacqui(?:re[sd]?|ring|sitions?)\b|\bmergers?\b|\btakeover\b|\bbuyout\b|\bstake\b"
             r"|\bto buy\b|\bdeal (?:to|for|with)\b|\bfunding round\b|\braises? \$|\bvaluation\b",
-    "leadership": r"\bCEO\b|\bchief executive\b|\bCFO\b|\bresign(?:s|ed|ation)?\b|\bsteps? down\b"
-                  r"|\bstepping down\b|\bappoint(?:s|ed|ment)?\b|\bsuccessor\b|\bousted\b",
+    # A change at the top, not every headline that mentions a CEO.
+    "leadership": r"\bresign(?:s|ed|ation)?\b|\bsteps? down\b|\bstepping down\b|\bappoint(?:s|ed|ment)?\b"
+                  r"|\bsuccessor\b|\bsuccession\b|\bousted\b|\bnew (?:CEO|chief executive|CFO|chairman)\b"
+                  r"|\bnames? (?:\w+ ){0,4}(?:as )?(?:CEO|chief executive|CFO)\b"
+                  r"|\b(?:CEO|chief executive|CFO|chairman) (?:to )?(?:quits?|exits?|departs?|leaves|retires?)\b",
     "analyst": r"\bupgrade[sd]?\b|\bdowngrade[sd]?\b|\bprice target\b|\boverweight\b|\bunderweight\b"
                r"|\boutperform\b|\bunderperform\b",
     "product": r"\blaunch(?:es|ed)?\b|\bunveil(?:s|ed)?\b|\breleases?d?\b|\bintroduce[sd]?\b"
@@ -56,7 +65,7 @@ _EN = {
              r"|\binflation\b|\bCPI\b|\bPCE\b|\bjobs report\b|\bpayrolls\b|\bunemployment\b|\brecession\b"
              r"|\btariffs?\b|\btrade (?:war|deal|talks)\b|\bGDP\b|\b(?:Treasury|bond) yields?\b|\bECB\b"
              r"|\bBank of Japan\b|\bBOJ\b|\bPBOC\b|\bPeople's Bank of China\b|\bstimulus\b"
-             r"|\bgovernment shutdown\b",
+             r"|\bgovernment shutdown\b|\bmidterms?\b|\belection results?\b",
 }
 _ZH = {
     "ipo": r"IPO|招股|申购|申購|递表|遞表|上市申请|上市申請|聆讯|聆訊|挂牌|掛牌|首发|首發|暗盘|暗盤|上市(?!公司)",
@@ -64,7 +73,7 @@ _ZH = {
     "regulation": r"出口管制|制裁|反垄断|反壟斷|调查|調查|禁令|监管|監管|罚款|罰款|诉讼|訴訟|起诉|起訴|约谈|約談"
                   r"|立案|实体清单|實體清單",
     "deal": r"收购|收購|并购|併購|合并|合併|入股|融资|融資|估值",
-    "leadership": r"首席执行官|首席執行官|行政总裁|行政總裁|辞职|辭職|卸任|接任|董事长|董事長",
+    "leadership": r"辞职|辭職|卸任|接任|离职|離職|新任(?:CEO|首席执行官|首席執行官|董事长|董事長|行政总裁|行政總裁)",
     "analyst": r"评级|評級|目标价|目標價|调升|調升|调降|調降",
     "product": r"发布会|發布會|新品|推出|亮相",
     "macro": r"美联储|美聯儲|联储|聯準會|降息|加息|升息|利率|通胀|通膨|通脹|非农|非農|关税|關稅|贸易战|貿易戰"
@@ -91,9 +100,21 @@ NOISE = re.compile(
     r"|\bmy (?:favorite|top)\b|\bbetter (?:buy|stock)\b|\bhere's why\b|\bforever\b|\bno-brainer\b"
     r"|\bunstoppable\b|\bsmartest\b|\bsurefire\b|\bdon't miss\b|\bbillionaires? (?:are )?(?:buying|selling)\b"
     r"|\b\d+ (?:top |best |great |magnificent |growth |dividend |ai |tech )?stocks?\b"
-    r"|牛股|必看|速看|揭秘|收评|午评|早评|盘前必读|龙虎榜|个股异动", re.I)
+    r"|\bhere's (?:what|how)\b|\bwhat history says\b|\bwhat smart people\b|\bstock forecast\b"
+    r"|\bprice prediction\b|\bnet worth\b|\blive charts?\b|\bmarketcap\b|\bremains? a buy\b"
+    r"|牛股|必看|速看|揭秘|收评|午评|早评|盘前必读|龙虎榜|个股异动|股价行情|股票股价|行情_|_资讯|爆料|甜甜價", re.I)
+# Market round-ups mention many companies in passing; they shouldn't count as news about each one.
+WRAP = re.compile(
+    r"\b(?:stock|equity|index|Nasdaq|Dow|S&P(?: 500)?) futures\b|\bWall St(?:reet)?\b|\bpre-?market\b"
+    r"|\bstock market today\b|\bmarkets? (?:wrap|today|live|talk)\b|\bwhat to watch\b|\bweekly .{0,30}outlook\b"
+    r"|\bFirst Thing\b|\b(?:Asian|European|world|global) (?:markets|equities|stocks|shares)\b|\bDaily \w+ \d{1,2}\b"
+    r"|\b(?:KOSPI|Nikkei|Hang Seng Index|TAIEX|Taiex|ASX|FTSE|DAX|Sensex|Nifty)\b|\b(?:Dow|S&P 500|Nasdaq 100)\b.*\b(?:preview|forecast|today|live)\b"
+    r"|收市|收盘|收盤|开盘|開盤|盘前|盤前|盘后|盤後|午盘|早盘|北水|成交额TOP|成交額", re.I)
+QUESTION = re.compile(r"[?？]\s*$|吗[？?]?\s*$|^why\b|^为什么|^為什麼", re.I)
 NOISE_SOURCES = ("motley fool", "fool.com", "investorplace", "24/7 wall st", "zacks", "marketbeat",
-                 "simply wall st", "ainvest", "gurufocus", "seeking alpha", "tipranks", "insider monkey")
+                 "simply wall st", "ainvest", "gurufocus", "seeking alpha", "tipranks", "insider monkey",
+                 "chartmill", "ad-hoc-news", "shattered.io", "stock titan", "stocktitan", "biggo", "moneylion",
+                 "fourweekmba", "beinsure", "coinbase", "爆料")
 TRUSTED_SOURCES = (
     "reuters", "bloomberg", "cnbc", "wall street journal", "wsj", "financial times", "ft.com",
     "nikkei", "south china morning post", "scmp", "barron", "marketwatch", "associated press",
@@ -173,7 +194,9 @@ def tag_item(item: dict, cfg: Config) -> dict | None:
         score += 1 + (1 if any(c.watch for c in other_cos) else 0)
     elif sector or "macro" in cats:
         score += 1
-    score += moves + (1 if trusted else 0) - (4 if noise else 0)
+    question = bool(QUESTION.search(title))  # "Is Nvidia a buy?" is opinion, not news
+    wrap = bool(WRAP.search(title))
+    score += moves + (1 if trusted else 0) - (4 if noise else 0) - (2 if question else 0) - (2 if wrap else 0)
 
     return {
         **item,
@@ -191,24 +214,51 @@ def tag_item(item: dict, cfg: Config) -> dict | None:
 
 # ── Grouping the same story ───────────────────────────────────────────
 
-def cluster(tagged: list[dict], window: timedelta = timedelta(hours=36)) -> list[list[dict]]:
-    """Greedy grouping of headlines about the same event (same language, similar words, close in time)."""
+WINDOW = timedelta(hours=36)   # a headline joins a group only if the group was active this recently
+MAX_SPAN = timedelta(hours=48)  # and one story never stretches over more than two days
+
+
+class Weights:
+    """Rare words count more than common ones ('spy' says more than 'Nvidia' on a day full of Nvidia news)."""
+
+    def __init__(self, tagged: list[dict]):
+        df = Counter(t for item in tagged for t in item["_toks"])
+        n = len(tagged) + 1
+        self.idf = {t: math.log(1 + n / c) for t, c in df.items()}
+        self.default = math.log(1 + n)
+
+    def total(self, toks: set[str]) -> float:
+        return sum(self.idf.get(t, self.default) for t in toks)
+
+    def overlap(self, a: set[str], b: set[str]) -> float:
+        shared = a & b
+        if not shared:
+            return 0.0
+        return self.total(shared) / min(self.total(a), self.total(b))
+
+
+def cluster(tagged: list[dict], weights: Weights) -> list[list[dict]]:
+    """Pass 1: group near-identical headlines (same language, many shared rare words, close in time)."""
     groups: list[dict] = []
     index: dict[str, set[int]] = {}
-    for item in sorted(tagged, key=lambda i: i["_time"]):
+    ordered = sorted(tagged, key=lambda i: i["_time"])
+    for n, item in enumerate(ordered):
+        if n % 300 == 0:  # forget groups that have gone quiet, to keep matching fast
+            index = {t: {g for g in gs if item["_time"] - groups[g]["last"] <= WINDOW} for t, gs in index.items()}
         names = {c.name for c in item["_title_companies"]}
         best, best_sim = None, 0.0
         candidates = set().union(*(index.get(t, set()) for t in item["_toks"])) if item["_toks"] else set()
         for gi in candidates:
             g = groups[gi]
-            if g["lang"] != item["lang"] or item["_time"] - g["last"] > window:
+            if g["lang"] != item["lang"] or item["_time"] - g["last"] > WINDOW or item["_time"] - g["first"] > MAX_SPAN:
                 continue
-            sim = max(jaccard(item["_toks"], other["_toks"]) for other in g["items"][-15:])
-            threshold = 0.34 if names & g["names"] else 0.5
+            sim = max(weights.overlap(item["_toks"], other["_toks"]) for other in g["items"][-8:])
+            threshold = 0.4 if names & g["names"] else 0.55
             if sim >= threshold and sim > best_sim:
                 best, best_sim = gi, sim
         if best is None:
-            groups.append({"items": [item], "names": set(names), "lang": item["lang"], "last": item["_time"]})
+            groups.append({"items": [item], "names": set(names), "lang": item["lang"],
+                           "first": item["_time"], "last": item["_time"]})
             best = len(groups) - 1
         else:
             g = groups[best]
@@ -218,6 +268,44 @@ def cluster(tagged: list[dict], window: timedelta = timedelta(hours=36)) -> list
         for t in item["_toks"]:
             index.setdefault(t, set()).add(best)
     return [g["items"] for g in groups]
+
+
+def _signature(group: list[dict]) -> set[str]:
+    """Words used by at least a quarter of a group's headlines."""
+    counts = Counter(t for item in group for t in item["_toks"])
+    need = max(1, math.ceil(len(group) * 0.25))
+    return {t for t, c in counts.items() if c >= need}
+
+
+def merge_events(groups: list[list[dict]], weights: Weights, threshold: float = 0.55) -> list[list[dict]]:
+    """Pass 2: merge groups about the same company event that outlets worded differently."""
+    groups = sorted((list(g) for g in groups), key=len, reverse=True)
+    alive = [True] * len(groups)
+    info = []
+    for g in groups:
+        times = [i["_time"] for i in g]
+        info.append({"sig": _signature(g), "names": {c.name for i in g for c in i["_title_companies"]},
+                     "lang": g[0]["lang"], "start": min(times), "end": max(times)})
+    by_company: dict[str, list[int]] = {}
+    for k, inf in enumerate(info):
+        for name in inf["names"]:
+            by_company.setdefault(name, []).append(k)
+    for a in range(len(groups)):  # biggest groups absorb smaller ones
+        if not alive[a] or not info[a]["names"]:
+            continue
+        candidates = sorted({b for name in info[a]["names"] for b in by_company[name] if b > a})
+        for b in candidates:
+            ia, ib = info[a], info[b]
+            if not alive[b] or ia["lang"] != ib["lang"]:
+                continue
+            if max(ia["end"], ib["end"]) - min(ia["start"], ib["start"]) > MAX_SPAN:
+                continue
+            if weights.overlap(ia["sig"], ib["sig"]) >= threshold:
+                groups[a] += groups[b]
+                alive[b] = False
+                ia["sig"] = _signature(groups[a])
+                ia["start"], ia["end"] = min(ia["start"], ib["start"]), max(ia["end"], ib["end"])
+    return [g for g, keep in zip(groups, alive) if keep]
 
 
 def coverage_points(outlets: int) -> int:
@@ -237,24 +325,32 @@ def _accepts(company: Company, lang: str) -> bool:
 def build_story(items: list[dict], cfg: Config) -> dict:
     lead = max(items, key=lambda i: (i["_trusted"], i["_score"], -i["_time"].timestamp()))
     outlets = len({i["source"].lower() for i in items})
-    companies: dict[str, Company] = {}
-    for i in sorted(items, key=lambda i: -i["_score"]):
-        for c in i["_companies"]:
-            companies.setdefault(c.name, c)
-    title_companies = {c.name: c for i in items for c in i["_title_companies"]}
-    cats = set().union(*(i["_cats"] for i in items))
-    best = max(i["_score"] for i in items)
-    cover = coverage_points(outlets)
-    score = round(best + cover, 1)
+    need = max(1, math.ceil(len(items) * 0.2))
+
+    def common(get) -> list:
+        """What the lead headline says plus what at least a fifth of the outlets say (not every stray word)."""
+        counts = Counter(x for i in items for x in get(i))
+        return list(dict.fromkeys([*get(lead), *(x for x, n in counts.most_common() if n >= need)]))
+
+    known = {c.name: c for i in items for c in i["_companies"]}
+    companies = {n: known[n] for n in common(lambda i: [c.name for c in i["_companies"]])}
+    title_companies = {n: known[n] for n in common(lambda i: [c.name for c in i["_title_companies"]])}
+    cats = set(common(lambda i: sorted(i["_cats"])))
+    # Typical strength of the headlines (top three), so one over-excited headline doesn't decide it.
+    clean = sorted((i["_score"] for i in items if not i["_noise"]), reverse=True) or [lead["_score"]]
+    best = sum(clean[:3]) / len(clean[:3])
+    score = round(best + coverage_points(outlets), 1)
     a = cfg.alerts
     level = "big" if score >= a["big_news_score"] else "notable" if score >= a["notable_score"] else "normal"
+    if level == "big" and (outlets < 2 or not cats & MATERIAL):
+        level = "notable"  # big needs a second outlet and a real event (not just a product or analyst note)
     if lead["_noise"]:
         level = "normal"
 
     reasons = []
     if outlets >= 2:
         reasons.append(f"Reported by {outlets} outlets")
-    if max(i["_moves"] for i in items) >= 2:
+    if "move" in cats:
         reasons.append("Big price move")
     for c in title_companies.values():
         if c.watch:
@@ -270,7 +366,12 @@ def build_story(items: list[dict], cfg: Config) -> dict:
     # News about a company in a language you didn't choose for it (e.g. Chinese coverage of NVIDIA).
     alt = bool(title_companies) and not any(_accepts(c, lead["lang"]) for c in title_companies.values())
     times = [i["_time"] for i in items]
-    others = sorted((i for i in items if i is not lead), key=lambda i: i["_time"], reverse=True)
+    # Show the most useful other outlets: trusted ones first, one headline per outlet.
+    others, seen = [], {lead["source"].lower()}
+    for i in sorted(items, key=lambda i: (i["_trusted"], not i["_noise"], i["_time"]), reverse=True):
+        if i["source"].lower() not in seen:
+            others.append(i)
+            seen.add(i["source"].lower())
     return {
         "id": min(items, key=lambda i: i["_time"])["id"],
         "title": lead["title"],
@@ -303,7 +404,8 @@ def build_story(items: list[dict], cfg: Config) -> dict:
 
 def build_stories(items: list[dict], cfg: Config) -> list[dict]:
     tagged = [t for t in (tag_item(i, cfg) for i in items) if t is not None]
-    stories = [build_story(group, cfg) for group in cluster(tagged)]
+    weights = Weights(tagged)
+    stories = [build_story(group, cfg) for group in merge_events(cluster(tagged, weights), weights)]
     _mark_language_duplicates(stories)
     stories.sort(key=lambda s: s["latest"], reverse=True)
     return stories
@@ -349,7 +451,7 @@ def select_alerts(stories: list[dict], state: dict, cfg: Config, now: datetime) 
 
     eligible = []
     for s in stories:
-        if s["noise"] or s["alt_dup"] or not s["_material"]:
+        if s["noise"] or s["alt_dup"] or not s["_material"] or s["outlets"] < 2:
             continue
         if any(i in notified or i in muted for i in s["_item_ids"]):
             continue
