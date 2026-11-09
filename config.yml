@@ -53,6 +53,7 @@ searches:
   - { q: '港股 IPO OR 科创板 上市 OR 招股 科技', lang: zh-CN }
   - { q: '金融科技 OR 蚂蚁集团 OR 富途 OR 支付宝', lang: zh-CN }
   - { q: '央行 降准 OR 降息 OR 证监会 OR 稳增长', lang: zh-CN }
+  - { q: 'AI 融资 OR 科技 独角兽 OR 科技公司 上市', lang: zh-CN }
   - { q: '恒生科技 OR 港股 科技股', lang: zh-HK }
   - { q: '台積電 OR 聯發科 OR 鴻海 股價', lang: zh-TW }
 
@@ -62,7 +63,6 @@ feeds:
   - { name: CNBC, url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html', lang: en, region: US }
   - { name: TechCrunch, url: 'https://techcrunch.com/category/fintech/feed/', lang: en, region: Global }
   - { name: TechCrunch, url: 'https://techcrunch.com/category/artificial-intelligence/feed/', lang: en, region: Global }
-  - { name: 36氪, url: 'https://36kr.com/feed', lang: zh, region: CN }
 
 # US IPO calendar from Nasdaq (upcoming, recently priced and newly filed IPOs).
 ipo_calendar: true

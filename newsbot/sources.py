@@ -196,6 +196,9 @@ def _source_from_title(title: str) -> str | None:
 def fetch_feed(feed: Feed, now: datetime, session: requests.Session) -> list[dict]:
     resp = session.get(feed.url, timeout=20, headers={"User-Agent": USER_AGENT})
     resp.raise_for_status()
+    head = resp.content[:600].lstrip().lower()
+    if head.startswith((b"<!doctype html", b"<html")) or b"<html" in head:
+        raise ValueError("the site sent a web page instead of a news feed (it may block automated readers)")
     return parse_feed(resp.content, feed, now)
 
 
