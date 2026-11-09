@@ -2,7 +2,9 @@ name: Update news
 
 on:
   schedule:
-    - cron: "2,17,32,47 * * * *"   # every 15 minutes (GitHub may start it a few minutes late)
+    # Every 15 minutes. GitHub may start a run a few minutes late, and takes a while to begin
+    # scheduled runs on a new repository; "Run workflow" on the Actions tab works any time.
+    - cron: "2,17,32,47 * * * *"
   workflow_dispatch:
     inputs:
       test_notification:
