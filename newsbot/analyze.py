@@ -41,7 +41,8 @@ _EN = {
     "ipo": r"\bIPOs?\b|initial public offering|\bgo(?:es|ing)? public\b|\bwent public\b"
            r"|\b(?:market|trading|stock market|Nasdaq|NYSE|Hong Kong) debut\b|\bdirect listing\b"
            r"|\bS-1\b|\bF-1\b|\bSPAC\b|\blisting (?:plan|application|debut)\b"
-           r"|\bfiles? (?:confidentially )?(?:for|to) (?:an? )?(?:IPO|list)",
+           r"|\bfiles? (?:confidentially )?(?:for|to) (?:an? )?(?:IPO|list)"
+           r"|\bACE Market\b|\bMain Market listing\b|\bprospectus\b",
     "earnings": r"\bearnings\b|\b(?:quarterly|financial|annual|Q[1-4]|(?:first|second|third|fourth)-quarter) results\b"
                 r"|\bresults (?:beat|miss|top)\b|\brevenue\b|\bprofits?\b|\bEPS\b|\bguidance\b|\boutlook\b"
                 r"|\bforecasts?\b|\b(?:beats?|miss(?:es|ed)?) (?:estimates|expectations|forecasts)\b"
@@ -65,7 +66,8 @@ _EN = {
              r"|\binflation\b|\bCPI\b|\bPCE\b|\bjobs report\b|\bpayrolls\b|\bunemployment\b|\brecession\b"
              r"|\btariffs?\b|\btrade (?:war|deal|talks)\b|\bGDP\b|\b(?:Treasury|bond) yields?\b|\bECB\b"
              r"|\bBank of Japan\b|\bBOJ\b|\bPBOC\b|\bPeople's Bank of China\b|\bstimulus\b"
-             r"|\bgovernment shutdown\b|\bmidterms?\b|\belection results?\b",
+             r"|\bgovernment shutdown\b|\bmidterms?\b|\belection results?\b"
+             r"|\bBank Negara\b|\bOPR\b|\bringgit\b",
 }
 _ZH = {
     "ipo": r"IPO|招股|申购|申購|递表|遞表|上市申请|上市申請|聆讯|聆訊|挂牌|掛牌|首发|首發|暗盘|暗盤|上市(?!公司)",
@@ -77,7 +79,8 @@ _ZH = {
     "analyst": r"评级|評級|目标价|目標價|调升|調升|调降|調降",
     "product": r"发布会|發布會|新品|推出|亮相",
     "macro": r"美联储|美聯儲|联储|聯準會|降息|加息|升息|利率|通胀|通膨|通脹|非农|非農|关税|關稅|贸易战|貿易戰"
-             r"|央行|人民银行|降准|降準|国务院|國務院|证监会|證監會|经济数据|經濟數據|衰退",
+             r"|央行|人民银行|降准|降準|国务院|國務院|证监会|證監會|经济数据|經濟數據|衰退"
+             r"|国家银行|國家銀行|隔夜政策利率|令吉",
 }
 CATEGORY_RULES = {cat: (re.compile(_EN[cat], re.I), re.compile(_ZH[cat])) for cat in CATEGORY_WEIGHTS}
 
@@ -108,12 +111,14 @@ WRAP = re.compile(
     r"\b(?:stock|equity|index|Nasdaq|Dow|S&P(?: 500)?) futures\b|\bWall St(?:reet)?\b|\bpre-?market\b"
     r"|\bstock market today\b|\bmarkets? (?:wrap|today|live|talk)\b|\bwhat to watch\b|\bweekly .{0,30}outlook\b"
     r"|\bFirst Thing\b|\b(?:Asian|European|world|global) (?:markets|equities|stocks|shares)\b|\bDaily \w+ \d{1,2}\b"
-    r"|\b(?:KOSPI|Nikkei|Hang Seng Index|TAIEX|Taiex|ASX|FTSE|DAX|Sensex|Nifty)\b|\b(?:Dow|S&P 500|Nasdaq 100)\b.*\b(?:preview|forecast|today|live)\b"
+    r"|\b(?:KOSPI|Nikkei|Hang Seng Index|TAIEX|Taiex|ASX|FTSE|DAX|Sensex|Nifty|FBM KLCI|KLCI)\b"
+    r"|\bBursa Malaysia (?:opens|closes|ends|extends|snaps|edges|slips|rises|falls|higher|lower|mixed)\b"
+    r"|马股收|马股开|大马股市|\b(?:Dow|S&P 500|Nasdaq 100)\b.*\b(?:preview|forecast|today|live)\b"
     r"|收市|收盘|收盤|开盘|開盤|盘前|盤前|盘后|盤後|午盘|早盘|北水|成交额TOP|成交額", re.I)
-QUESTION = re.compile(r"[?？]\s*$|吗[？?]?\s*$|^why\b|^为什么|^為什麼", re.I)
+QUESTION = re.compile(r"[?？]\s*$|吗[？?]?\s*$|^why\b|^how\b.*\b(?:could|will|may|might)\b|^为什么|^為什麼", re.I)
 NOISE_SOURCES = ("motley fool", "fool.com", "investorplace", "24/7 wall st", "zacks", "marketbeat",
                  "simply wall st", "ainvest", "gurufocus", "seeking alpha", "tipranks", "insider monkey",
-                 "chartmill", "ad-hoc-news", "shattered.io", "stock titan", "stocktitan", "biggo", "moneylion",
+                 "chartmill", "ad-hoc-news", "shattered.io", "stock titan", "stocktitan", "biggo",
                  "fourweekmba", "beinsure", "coinbase", "爆料")
 TRUSTED_SOURCES = (
     "reuters", "bloomberg", "cnbc", "wall street journal", "wsj", "financial times", "ft.com",
@@ -122,15 +127,18 @@ TRUSTED_SOURCES = (
     "caixin", "财新", "財新", "财联社", "第一财经", "21世纪经济报道", "证券时报", "中国证券报", "上海证券报",
     "经济观察", "华尔街见闻", "澎湃", "新浪财经", "东方财富", "经济日报", "經濟日報", "信報", "明報",
     "工商時報", "鉅亨", "中央社", "联合早报", "聯合早報", "36氪", "the edge", "straits times",
+    "the star", "new straits times", "bernama", "malay mail", "free malaysia today", "the malaysian reserve",
+    "digital news asia", "星洲", "南洋商报", "南洋商報", "东方日报", "東方日報", "中国报",
 )
 
 SECTOR = re.compile(
     r"\bAI\b|artificial intelligence|\bchips?\b|chipmakers?|semiconductors?|data cent(?:er|re)s?|\bcloud\b"
     r"|\bsoftware\b|fintech|\bpayments?\b|digital bank|neobank|stablecoins?|crypto exchange"
     r"|\btech (?:stocks?|shares|sector|giants?|IPOs?)\b|\bNasdaq\b|Magnificent Seven|Hang Seng Tech"
-    r"|robotics|quantum computing|\bGPUs?\b|\bLLMs?\b"
+    r"|robotics|quantum computing|\bGPUs?\b|\bLLMs?\b|\be-?wallets?\b|digital banks?"
     r"|人工智能|芯片|晶片|半导体|半導體|算力|大模型|数据中心|數據中心|云计算|雲端|金融科技|支付|数字银行|數字銀行"
-    r"|虚拟银行|虛擬銀行|稳定币|穩定幣|科技股|恒生科技|恒生科指|科创板|科創板|纳斯达克|納斯達克|纳指|机器人|機器人|量子",
+    r"|虚拟银行|虛擬銀行|稳定币|穩定幣|科技股|恒生科技|恒生科指|科创板|科創板|纳斯达克|納斯達克|纳指|机器人|機器人|量子"
+    r"|电子钱包|電子錢包|数码银行|數碼銀行",
     re.I)
 TECH_IPO_NAME = re.compile(
     r"\bAI\b|\.ai\b|Intelligen|Tech|Semi|Silicon|Chip|Micro|Data|Cloud|Software|Digital|Robot|Quantum"

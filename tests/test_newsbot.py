@@ -28,7 +28,8 @@ def item(title, source="Reuters", minutes_ago=30, lang="en", link=None, summary=
 
 def test_config_loads_watchlist_and_languages(cfg):
     watched = {c.name: c for c in cfg.watched}
-    assert set(watched) == {"NVIDIA", "TSMC", "Tencent"}
+    assert set(watched) == {"NVIDIA", "TSMC", "Tencent", "JPMorgan", "MoneyLion", "Touch 'n Go"}
+    assert watched["Touch 'n Go"].lang == "both" and watched["Touch 'n Go"].private
     assert watched["Tencent"].lang == "zh"
     assert watched["TSMC"].lang == "both"
     assert watched["NVIDIA"].lang == "en"
@@ -376,3 +377,48 @@ def test_email_message_is_high_priority_with_read_button(monkeypatch):
     assert msg["X-Priority"] == "1" and msg["To"] == "me@example.com" and "Stocks Review" in msg["From"]
     html_part = msg.get_body(("html",)).get_content()
     assert "Read the article" in html_part and "Nvidia sinks &lt;5%&gt;" in html_part and "https://news/1" in html_part
+
+
+# ── Malaysia, JPMorgan, MoneyLion, Touch 'n Go ────────────────────────
+
+@pytest.mark.parametrize("text, expected", [
+    ("Touch 'n Go eyes Bursa IPO", ["Touch 'n Go"]),
+    ("Touch ’n Go eWallet hits 25 million users", ["Touch 'n Go"]),
+    ("TNG Digital weighs US listing", ["Touch 'n Go"]),
+    ("JPMorgan analysts see Nvidia rising 20%", ["NVIDIA"]),
+    ("Nvidia price target raised, according to JPMorgan", ["NVIDIA"]),
+    ("JPMorgan profit jumps 12% as trading booms", ["JPMorgan"]),
+    ("Jamie Dimon warns on credit markets", ["JPMorgan"]),
+    ("摩根大通：上调英伟达目标价", ["NVIDIA"]),
+    ("MoneyLion launches cash advance product", ["MoneyLion"]),
+])
+def test_followed_company_matching(cfg, text, expected):
+    assert [c.name for c in cfg.companies if c.found_in(text)] == expected
+
+
+def test_followed_companies_get_their_own_searches(cfg):
+    labels = {f.label: f for f in sources.build_feeds(cfg)}
+    tng = labels['Google News [en-MY] "Touch \'n Go" OR "TNG Digital" OR "TNG eWallet" OR "Touch n Go"']
+    assert "gl=MY" in tng.url and tng.region == "MY"
+    assert 'Google News [en-US] "MoneyLion"' in labels
+    assert 'Google News [en-US] "JPMorgan" (stock OR shares OR earnings OR Dimon)' in labels
+
+
+@pytest.mark.parametrize("title, cats", [
+    ("Touch 'n Go files prospectus for ACE Market listing", {"ipo"}),
+    ("Bank Negara keeps OPR unchanged at 2.75%", {"macro"}),
+    ("国家银行维持隔夜政策利率不变", {"macro"}),
+])
+def test_malaysian_terms(title, cats):
+    assert analyze.categories_for(title) == cats
+
+
+def test_touch_n_go_ipo_news_is_flagged_as_ipo_candidate(cfg):
+    [story] = analyze.build_stories([
+        item("Touch 'n Go eWallet operator TNG Digital mulls IPO on Bursa Malaysia", "The Edge Malaysia", 40),
+        item("TNG Digital mulls Bursa Malaysia IPO for Touch 'n Go eWallet, sources say", "Reuters", 30),
+    ], cfg)
+    assert story["companies"] == ["Touch 'n Go"] and "ipo" in story["categories"]
+    assert "Touch 'n Go is not listed yet (IPO candidate)" in story["reasons"]
+    assert "Touch 'n Go is on your watchlist" in story["reasons"]
+    assert len(analyze.select_alerts([story], {}, cfg, NOW)) == 1

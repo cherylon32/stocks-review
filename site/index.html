@@ -1,12 +1,15 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Stocks Review</title>
   <meta name="description" content="Market-moving tech, AI and fintech news, filtered and scored.">
-  <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f6f7f9" id="theme-color">
+  <script>
+    // Apply the saved theme before the page draws (light unless you chose dark).
+    try { var t = JSON.parse(localStorage.getItem("sr:theme")); if (t === "dark") document.documentElement.dataset.theme = "dark"; } catch (e) {}
+  </script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232457d6'/%3E%3Cpath d='M7 21l6-6 4 4 8-9' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -17,7 +20,10 @@
         <h1>Stocks Review</h1>
         <p class="tagline">Tech, AI &amp; fintech news that can move your stocks</p>
       </div>
-      <p class="status" id="status" aria-live="polite">Loading…</p>
+      <div class="top-right">
+        <p class="status" id="status" aria-live="polite">Loading…</p>
+        <button type="button" class="theme-btn" id="theme-btn" aria-pressed="false">🌙 Dark</button>
+      </div>
     </div>
     <nav class="tabs wrap" role="tablist" aria-label="Sections">
       <button role="tab" data-tab="big" aria-selected="true">Big news <span class="count" id="count-big"></span></button>
@@ -45,7 +51,7 @@
           <label>Region
             <select id="f-region">
               <option value="">All</option><option value="US">US</option><option value="CN">China / HK</option>
-              <option value="TW">Taiwan</option><option value="ASIA">Rest of Asia</option><option value="EU">Europe</option>
+              <option value="MY">Malaysia</option><option value="TW">Taiwan</option><option value="ASIA">Rest of Asia</option><option value="EU">Europe</option>
             </select>
           </label>
           <label>Topic

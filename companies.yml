@@ -2,10 +2,12 @@
 #
 #   tier 1  = giants whose news can move the whole market
 #   tier 2  = other important names
-#   market  = where it is listed (US, CN, HK, TW, JP, KR, SG, EU)
+#   market  = where it is listed (US, CN, HK, TW, JP, KR, SG, MY, EU)
 #   private = not listed yet, so it's an IPO candidate
 #   lang    = which language you prefer for its news: en, zh or both
-#             (default: zh for CN/HK, both for TW, en for everything else)
+#             (default: zh for CN/HK, both for TW/MY, en for everything else)
+#   search  = optional: exactly what to search for when the company is on your watchlist
+#   ignore  = optional: headline patterns where the name isn't the subject
 #
 # Aliases are matched as whole words (English, case-insensitive; ALL-CAPS tickers
 # and names starting with a lowercase letter must match exactly) or as plain text (Chinese).
@@ -76,6 +78,24 @@
     aliases: [xAI] }
 - { name: Databricks, market: US, tier: 2, sector: Data & AI, private: true,
     aliases: [Databricks] }
+
+# ── Banks and fintech you follow ──────────────────────────────────────
+# "ignore" skips headlines where the bank is only the commentator (e.g. "JPMorgan analysts see Nvidia…").
+- name: JPMorgan
+  ticker: JPM
+  market: US
+  tier: 1
+  sector: Banking & payments
+  aliases: [JPMorgan, JP Morgan, J.P. Morgan, JPMorgan Chase, Jamie Dimon, JPM, 摩根大通]
+  search: '"JPMorgan" (stock OR shares OR earnings OR Dimon)'
+  ignore:
+    - 'J\.?\s?P\.?\s?Morgan(?: Chase)?(?:''s|’s)?(?: \w+)? (?:analysts?|strategists?|economists?|sees|expects|predicts|forecasts|upgrades?|downgrades?|initiates|reiterates|is (?:bullish|bearish))\b'
+    - '(?:according to|from|by|per) J\.?\s?P\.?\s?Morgan\b'
+    - '(?:摩根大通|小摩)(?:[：:]|指|料|预计|預計|认为|認為|看好|上调|上調|下调|下調|评级|評級|目标价|目標價)'
+- { name: MoneyLion, market: US, tier: 2, sector: Fintech app (owned by Gen Digital since 2025),
+    aliases: [MoneyLion], search: '"MoneyLion"' }
+- { name: Gen Digital, ticker: GEN, market: US, tier: 2, sector: Cyber safety (owns MoneyLion),
+    aliases: [Gen Digital] }
 
 # ── Tier 2: fintech and payments ──────────────────────────────────────
 - { name: PayPal, ticker: PYPL, market: US, tier: 2, sector: Payments,
@@ -160,3 +180,25 @@
     aliases: [Ant Group, Alipay, 蚂蚁集团, 螞蟻集團, 支付宝, 支付寶] }
 - { name: DeepSeek, market: CN, tier: 2, sector: AI, private: true,
     aliases: [DeepSeek, 深度求索] }
+
+# ── Malaysia ──────────────────────────────────────────────────────────
+- name: "Touch 'n Go"
+  market: MY
+  tier: 2
+  sector: E-wallet (TNG Digital)
+  private: true
+  aliases: ["Touch 'n Go", "Touch ‘n Go", "Touch ’n Go", Touch n Go, TNG Digital, TNG eWallet, TnG eWallet, TnG]
+  search: '"Touch ''n Go" OR "TNG Digital" OR "TNG eWallet" OR "Touch n Go"'
+- { name: Inari Amertron, market: MY, tier: 2, sector: Chip packaging, aliases: [Inari Amertron, Inari] }
+- { name: ViTrox, market: MY, tier: 2, sector: Chip inspection equipment, aliases: [ViTrox] }
+- { name: Frontken, market: MY, tier: 2, sector: Chip equipment services, aliases: [Frontken] }
+- { name: Greatech, market: MY, tier: 2, sector: Automation equipment, aliases: [Greatech] }
+- { name: Pentamaster, market: MY, tier: 2, sector: Automation and testing, aliases: [Pentamaster] }
+- { name: Unisem, market: MY, tier: 2, sector: Chip packaging, aliases: [Unisem] }
+- { name: MyEG, market: MY, tier: 2, sector: Digital services and fintech, aliases: [MyEG, My EG Services] }
+- { name: YTL Power, market: MY, tier: 2, sector: AI data centres, aliases: [YTL Power, YTL AI Cloud] }
+- { name: GXBank, market: MY, tier: 2, sector: Digital bank (Grab), private: true, aliases: [GXBank, GX Bank] }
+- { name: Boost, market: MY, tier: 2, sector: E-wallet and digital bank, private: true,
+    aliases: [Boost eWallet, Boost Bank, Boost Holdings] }
+- { name: BigPay, market: MY, tier: 2, sector: Fintech, private: true, aliases: [BigPay] }
+- { name: Ryt Bank, market: MY, tier: 2, sector: Digital bank (YTL), private: true, aliases: [Ryt Bank] }

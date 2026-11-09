@@ -48,8 +48,8 @@ const CHECKLISTS = {
 };
 const CHECK_ORDER = ["ipo", "earnings", "regulation", "deal", "leadership", "move", "macro", "analyst", "product"];
 
-const REGION_OF_MARKET = { US: "US", CN: "CN", HK: "CN", TW: "TW", JP: "ASIA", KR: "ASIA", SG: "ASIA", IN: "ASIA", EU: "EU" };
-const REGION_OF_FEED = { US: "US", CN: "CN", HK: "CN", TW: "TW", Asia: "ASIA" };
+const REGION_OF_MARKET = { US: "US", CN: "CN", HK: "CN", TW: "TW", MY: "MY", JP: "ASIA", KR: "ASIA", SG: "ASIA", IN: "ASIA", EU: "EU" };
+const REGION_OF_FEED = { US: "US", CN: "CN", HK: "CN", TW: "TW", MY: "MY", Asia: "ASIA" };
 
 let DATA = null;
 let SORT = "newest"; // "newest" or "important"; set from saved preference in init()
@@ -329,6 +329,17 @@ function render() {
   renderGuide();
 }
 
+// Light is the default; the button switches to dark and your choice is remembered on this device.
+function applyTheme(theme) {
+  const dark = theme === "dark";
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  const btn = $("#theme-btn");
+  btn.textContent = dark ? "☀️ Light" : "🌙 Dark";
+  btn.setAttribute("aria-pressed", String(dark));
+  btn.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+  $("#theme-color").setAttribute("content", dark ? "#0f1115" : "#f6f7f9");
+}
+
 function setSort(value, save = true) {
   SORT = value === "important" ? "important" : "newest";
   for (const b of document.querySelectorAll("[data-sort]")) b.setAttribute("aria-pressed", String(b.dataset.sort === SORT));
@@ -370,6 +381,12 @@ function init() {
   for (const b of document.querySelectorAll(".tabs button")) b.addEventListener("click", () => showTab(b.dataset.tab));
   for (const b of document.querySelectorAll("[data-sort]")) b.addEventListener("click", () => setSort(b.dataset.sort));
   setSort(store.get("sort", "newest"), false);
+  applyTheme(store.get("theme", "light"));
+  $("#theme-btn").addEventListener("click", () => {
+    const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    applyTheme(next);
+    store.set("theme", next);
+  });
   document.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-toggle-more]");
     if (!btn) return;

@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 ZH_MARKETS = {"CN", "HK"}
-BOTH_MARKETS = {"TW"}
+BOTH_MARKETS = {"TW", "MY"}  # Malaysia: English and Chinese press both matter
 
 DEFAULT_ALERTS = {
     "big_news_score": 9,
@@ -33,9 +33,12 @@ class Company:
     private: bool = False
     lang: str = "en"
     watch: bool = False
+    search: str | None = None  # custom news search used when the company is on your watchlist
+    ignore: list[str] = field(default_factory=list)  # headline patterns where the name isn't the subject
     _ci: re.Pattern | None = field(default=None, repr=False)
     _cs: re.Pattern | None = field(default=None, repr=False)
     _cjk: tuple[str, ...] = field(default=(), repr=False)
+    _ignore: re.Pattern | None = field(default=None, repr=False)
 
     def compile(self) -> "Company":
         ci, cs, cjk = [], [], []
@@ -52,14 +55,14 @@ class Company:
         self._ci = re.compile(wrap.format("|".join(ci)), re.I) if ci else None
         self._cs = re.compile(wrap.format("|".join(cs))) if cs else None
         self._cjk = tuple(cjk)
+        self._ignore = re.compile("|".join(f"(?:{p})" for p in self.ignore), re.I) if self.ignore else None
         return self
 
     def found_in(self, text: str) -> bool:
-        if self._ci and self._ci.search(text):
-            return True
-        if self._cs and self._cs.search(text):
-            return True
-        return any(alias in text for alias in self._cjk)
+        found = bool((self._ci and self._ci.search(text)) or (self._cs and self._cs.search(text))
+                     or any(alias in text for alias in self._cjk))
+        # e.g. "JPMorgan analysts see Nvidia rising" is news about Nvidia, not about JPMorgan.
+        return found and not (self._ignore and self._ignore.search(text))
 
     def keys(self) -> set[str]:
         """Lower-cased names a watchlist entry may use for this company."""
@@ -119,6 +122,8 @@ def load(config_path: str | Path = "config.yml", companies_path: str | Path = "c
                 ticker=str(row["ticker"]) if row.get("ticker") else None,
                 private=bool(row.get("private", False)),
                 lang=str(row.get("lang") or default_lang(market)),
+                search=str(row["search"]) if row.get("search") else None,
+                ignore=[str(p) for p in row.get("ignore") or []],
             )
         )
 

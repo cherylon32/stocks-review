@@ -3,11 +3,11 @@
 A free news radar for an investor who doesn't want to read the news all day.
 
 - **Reads the news every 15 minutes**: Google News searches in English and Chinese, CNBC, TechCrunch and the Nasdaq US IPO calendar.
-- **Keeps only what matters to you**: tech, AI, fintech and economy news, worldwide. US companies in English, Chinese companies in Chinese.
+- **Keeps only what matters to you**: tech, AI, fintech and economy news, worldwide, with extra searches for Malaysia (Bursa tech, e-wallets, digital banks, data centres, IPOs). US companies in English, Chinese companies in Chinese, Malaysian companies in both.
 - **Notifies you only when big news breaks**: a push notification on your phone (or Telegram or email). Quiet days stay quiet.
 - **Dashboard for your phone**: every scored story, an IPO watch page, and a "Before you act" checklist on each big story.
 
-**Cost: $0.** Everything runs on GitHub Actions and GitHub Pages, which are free for public repositories. The news sources and notification services are free too.
+**Cost: $0.** Everything runs on free services. See [Will this ever cost money?](#will-this-ever-cost-money) below.
 
 Dashboard: **https://cherylon32.github.io/stocks-review/** (it works after step 1 below).
 
@@ -53,6 +53,23 @@ The first update only records what's already in the news (so you aren't flooded 
 - **Change your watchlist or alert sensitivity** in [`config.yml`](config.yml). You can edit it on GitHub from your phone. Raise `big_news_score` for fewer alerts, or lower it for more.
 - **Track a company the bot doesn't know yet**: add it to the watchlist, or add it with its Chinese name and ticker to [`companies.yml`](companies.yml).
 - The dashboard's **Guide** tab explains how stories are scored and suggests how to turn news into better decisions.
+
+## Will this ever cost money?
+
+No, as long as the two rules at the end of this section hold. Every piece is free:
+
+| Part | Service | Why it's free |
+|---|---|---|
+| Runs every 15 minutes | GitHub Actions | Free and unlimited for **public** repositories on GitHub's standard runners |
+| Dashboard website | GitHub Pages | Free for **public** repositories (personal use is far below its 100 GB/month bandwidth guideline) |
+| News | Google News RSS, CNBC, TechCrunch, Nasdaq IPO calendar | Public feeds, no account or key |
+| Email alerts | Your Gmail (app password) | Free; at most about 10 alerts a day, far below Gmail's ~500/day sending limit |
+| Phone push (optional) | ntfy.sh / Telegram | Free, no account needed |
+
+No AI service or paid API is used, so there are no per-use charges. To make sure you are never billed:
+
+1. **Keep the repository public.** A private repository only gets 2,000 free Actions minutes a month (this bot would use about 3,000), and Pages for private repositories needs a paid plan.
+2. **Don't add a payment method to GitHub** (Settings → Billing and plans). Without one, GitHub cannot charge you; at worst it would pause the workflow.
 
 ## How it works
 

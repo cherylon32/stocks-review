@@ -12,6 +12,9 @@ watchlist:
   - NVIDIA
   - TSMC
   - Tencent
+  - JPMorgan
+  - MoneyLion
+  - Touch 'n Go
 
 alerts:
   # Every story gets a score (see the Guide tab on the dashboard for how).
@@ -29,7 +32,7 @@ alerts:
 # How many days of news the dashboard keeps.
 keep_days: 14
 
-# Google News searches. lang is one of: en-US, en-SG, zh-CN, zh-HK, zh-TW.
+# Google News searches. lang is one of: en-US, en-SG, en-MY, zh-CN, zh-HK, zh-TW.
 # Use OR (capitals) between alternatives and "quotes" for exact phrases.
 # Your watchlist is searched automatically, so you don't need to add it here.
 searches:
@@ -46,6 +49,14 @@ searches:
   - { q: 'Samsung OR "SK Hynix" OR SoftBank OR ASML shares', lang: en-US }
   # English — Southeast Asia
   - { q: 'Grab OR "Sea Ltd" OR "Asia tech stocks" OR "Hang Seng Tech"', lang: en-SG }
+  # English — Malaysia
+  - { q: '"Bursa Malaysia" technology OR semiconductor OR "tech stocks"', lang: en-MY }
+  - { q: 'Malaysia fintech OR e-wallet OR "digital bank"', lang: en-MY }
+  - { q: 'Malaysia "data centre" OR "data center" OR "AI investment"', lang: en-MY }
+  - { q: 'Bursa Malaysia IPO OR "ACE Market" OR "Main Market" listing', lang: en-MY }
+  - { q: '"Touch ''n Go" IPO OR listing OR "TNG Digital"', lang: en-MY }
+  # 中文 — 马来西亚
+  - { q: '大马 科技股 OR 马股 科技 OR 大马 电子钱包', lang: zh-CN }
   # 中文 — 中国大陆 / 香港 / 台湾
   - { q: '芯片 OR 半导体 OR 中芯国际 OR 寒武纪 股价', lang: zh-CN }
   - { q: '腾讯 OR 阿里巴巴 OR 百度 OR 小米 OR 美团 OR 京东 股价', lang: zh-CN }

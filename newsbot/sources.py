@@ -27,6 +27,7 @@ BROWSER_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
 EDITIONS = {
     "en-US": ("en-US", "US", "US:en", "en", "US"),
     "en-SG": ("en-SG", "SG", "SG:en", "en", "Asia"),
+    "en-MY": ("en-MY", "MY", "MY:en", "en", "MY"),
     "zh-CN": ("zh-CN", "CN", "CN:zh-Hans", "zh", "CN"),
     "zh-HK": ("zh-HK", "HK", "HK:zh-Hant", "zh", "HK"),
     "zh-TW": ("zh-TW", "TW", "TW:zh-Hant", "zh", "TW"),
@@ -50,8 +51,12 @@ def build_feeds(cfg: Config) -> list[Feed]:
     for company in cfg.watched:
         english = next((a for a in [company.name, *company.aliases] if a.isascii()), None)
         chinese = [a for a in company.aliases if not a.isascii()][:3]  # simplified and traditional forms
-        if company.lang in ("en", "both") and english:
-            feeds.append(google_news_feed(f'"{english}" (stock OR shares)', "en-US"))
+        edition = "en-MY" if company.market == "MY" else "en-US"
+        if company.search:  # companies.yml can define exactly what to search for
+            feeds.append(google_news_feed(company.search, edition))
+        elif company.lang in ("en", "both") and english:
+            query = f'"{english}"' if company.private else f'"{english}" (stock OR shares)'
+            feeds.append(google_news_feed(query, edition))
         if company.lang in ("zh", "both") and chinese:
             edition = "zh-TW" if company.market == "TW" else "zh-CN"
             word = "股價" if edition == "zh-TW" else "股价"

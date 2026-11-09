@@ -47,6 +47,12 @@ a { color: var(--accent); }
 .brand h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
 .tagline { margin: 0; color: var(--muted); font-size: 13px; }
 .status { margin: 0; color: var(--muted); font-size: 13px; }
+.top-right { display: flex; align-items: center; gap: 10px; }
+.theme-btn {
+  font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text); white-space: nowrap;
+}
+.theme-btn:hover { border-color: var(--accent); }
 .status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--good); margin-right: 6px; vertical-align: 1px; }
 .status .dot.stale { background: var(--notable); }
 .tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin-top: 8px; }
