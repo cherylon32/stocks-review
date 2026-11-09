@@ -422,3 +422,20 @@ def test_touch_n_go_ipo_news_is_flagged_as_ipo_candidate(cfg):
     assert "Touch 'n Go is not listed yet (IPO candidate)" in story["reasons"]
     assert "Touch 'n Go is on your watchlist" in story["reasons"]
     assert len(analyze.select_alerts([story], {}, cfg, NOW)) == 1
+
+
+def test_smaller_watchlist_companies_look_back_a_week(cfg):
+    feeds = {f.label: f for f in sources.build_feeds(cfg)}
+    tng = feeds['Google News [en-MY] "Touch \'n Go" OR "TNG Digital" OR "TNG eWallet" OR "Touch n Go"']
+    nvda = feeds['Google News [en-US] "NVIDIA" (stock OR shares)']
+    assert "when%3A7d" in tng.url and tng.max_age_days == 8
+    assert "when%3A1d" in nvda.url and nvda.max_age_days == 3
+
+
+def test_week_old_items_kept_only_for_week_long_searches():
+    xml = ("<rss><channel><item><title>TNG Digital appoints banks for listing</title><link>https://x/1</link>"
+           "<pubDate>Tue, 03 Nov 2026 08:00:00 GMT</pubDate><source>The Edge</source></item></channel></rss>").encode()
+    week = sources.google_news_feed('"TNG Digital"', "en-MY", 7)
+    day = sources.google_news_feed('"TNG Digital"', "en-MY")
+    assert len(sources.parse_feed(xml, week, NOW)) == 1
+    assert sources.parse_feed(xml, day, NOW) == []

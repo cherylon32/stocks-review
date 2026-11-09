@@ -79,6 +79,7 @@ class Feed:
     lang: str           # "en" or "zh"
     region: str
     label: str
+    max_age_days: int = 3  # ignore items older than this when fetching
 
 
 @dataclass

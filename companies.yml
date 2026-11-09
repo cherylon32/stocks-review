@@ -189,6 +189,8 @@
   private: true
   aliases: ["Touch 'n Go", "Touch ‘n Go", "Touch ’n Go", Touch n Go, TNG Digital, TNG eWallet, TnG eWallet, TnG]
   search: '"Touch ''n Go" OR "TNG Digital" OR "TNG eWallet" OR "Touch n Go"'
+- { name: CIMB, market: MY, tier: 2, sector: Bank; largest shareholder of TNG Digital (Touch 'n Go),
+    aliases: [CIMB, CIMB Group] }
 - { name: Inari Amertron, market: MY, tier: 2, sector: Chip packaging, aliases: [Inari Amertron, Inari] }
 - { name: ViTrox, market: MY, tier: 2, sector: Chip inspection equipment, aliases: [ViTrox] }
 - { name: Frontken, market: MY, tier: 2, sector: Chip equipment services, aliases: [Frontken] }

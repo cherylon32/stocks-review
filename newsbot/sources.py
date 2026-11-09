@@ -33,35 +33,37 @@ EDITIONS = {
     "zh-TW": ("zh-TW", "TW", "TW:zh-Hant", "zh", "TW"),
 }
 
-MAX_AGE_ON_FETCH = timedelta(days=3)
 ATOM = "{http://www.w3.org/2005/Atom}"
 
 
-def google_news_feed(query: str, lang: str) -> Feed:
+def google_news_feed(query: str, lang: str, days: int = 1) -> Feed:
     hl, gl, ceid, item_lang, region = EDITIONS.get(lang, EDITIONS["en-US"])
-    url = (f"https://news.google.com/rss/search?q={quote_plus(query + ' when:1d')}"
+    url = (f"https://news.google.com/rss/search?q={quote_plus(f'{query} when:{days}d')}"
            f"&hl={hl}&gl={gl}&ceid={ceid}")
-    return Feed(url=url, source=None, lang=item_lang, region=region, label=f"Google News [{lang}] {query}")
+    return Feed(url=url, source=None, lang=item_lang, region=region, label=f"Google News [{lang}] {query}",
+                max_age_days=max(3, days + 1))
 
 
 def build_feeds(cfg: Config) -> list[Feed]:
     feeds = [google_news_feed(str(s["q"]), str(s.get("lang", "en-US"))) for s in cfg.searches if s.get("q")]
 
     # Every watchlist company gets its own searches, in the language(s) you prefer for it.
+    # Smaller companies (tier 2) have less news, so their searches look back a week instead of a day.
     for company in cfg.watched:
+        days = 1 if company.tier == 1 else 7
         english = next((a for a in [company.name, *company.aliases] if a.isascii()), None)
         chinese = [a for a in company.aliases if not a.isascii()][:3]  # simplified and traditional forms
         edition = "en-MY" if company.market == "MY" else "en-US"
         if company.search:  # companies.yml can define exactly what to search for
-            feeds.append(google_news_feed(company.search, edition))
+            feeds.append(google_news_feed(company.search, edition, days))
         elif company.lang in ("en", "both") and english:
             query = f'"{english}"' if company.private else f'"{english}" (stock OR shares)'
-            feeds.append(google_news_feed(query, edition))
+            feeds.append(google_news_feed(query, edition, days))
         if company.lang in ("zh", "both") and chinese:
             edition = "zh-TW" if company.market == "TW" else "zh-CN"
             word = "股價" if edition == "zh-TW" else "股价"
             names = chinese[0] if len(chinese) == 1 else "(" + " OR ".join(chinese) + ")"
-            feeds.append(google_news_feed(f"{names} {word}", edition))
+            feeds.append(google_news_feed(f"{names} {word}", edition, days))
 
     for f in cfg.feeds:
         if f.get("url"):
@@ -175,7 +177,7 @@ def parse_feed(xml_bytes: bytes, feed: Feed, now: datetime) -> list[dict]:
         published = _parse_date(entry["date"]) or now
         if published > now + timedelta(hours=1):  # bad clocks in some feeds
             published = now
-        if now - published > MAX_AGE_ON_FETCH:
+        if now - published > timedelta(days=feed.max_age_days):
             continue
         # Google News summaries just repeat the headline; keep summaries from real feeds only.
         summary = "" if feed.source is None else clean_html(entry["summary"], limit=280)
