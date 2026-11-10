@@ -118,6 +118,25 @@ WRAP = re.compile(
     r"|马股收|马股开|大马股市|\b(?:Dow|S&P 500|Nasdaq 100)\b.*\b(?:preview|forecast|today|live)\b"
     r"|收市|收盘|收盤|开盘|開盤|盘前|盤前|盘后|盤後|午盘|早盘|北水|成交额TOP|成交額", re.I)
 QUESTION = re.compile(r"[?？]\s*$|吗[？?]?\s*$|^why\b|^how\b.*\b(?:could|will|may|might)\b|^为什么|^為什麼", re.I)
+# Previews and commentary: no new event has happened yet.
+PREVIEW = re.compile(
+    r"\bpreview\b|\b(?:before|ahead of) (?:its |the )?(?:earnings|results|report|IPO)\b|\bcountdown\b"
+    r"|\bwhat to expect\b|\b(?:expert|analyst|strategist)s? says?\b|\braises? (?:an? )?(?:\w+ )?questions?\b"
+    r"|\bfaces? (?:\w+ ){0,2}tests?\b|\bto face (?:\w+ ){0,3}(?:scrutiny|questions|tests?)\b"
+    r"|\bcould (?:become|be the next)\b|\bprofessor\b|前瞻|财报前|財報前", re.I)
+# "Cloud demand surges", "sales jump": business numbers moving, not the share price.
+NOT_PRICE = re.compile(
+    r"\b(?:demand|sales|revenue|profits?|earnings|orders|spending|usage|traffic|investments?|interest|costs?|prices"
+    r"|inflation|yields?|output|exports|imports|users|downloads|bookings|subscriptions?)\s+(?:\w+\s+)?"
+    r"(?:surge[sd]?|soar(?:s|ed)?|jump(?:s|ed)?|plunge[sd]?|tumble[sd]?|slump(?:s|ed)?|sinks?|sank|rall(?:y|ies|ied)"
+    r"|rise[sd]?|rose|climb(?:s|ed)?|fall(?:s)?|fell|drop(?:s|ped)?)\b", re.I)
+# "Down 73% from highs", "fell 12% in October": past performance, not today's move.
+HISTORICAL = re.compile(
+    r"\bfrom (?:its |their |all-time |record )?(?:highs?|peaks?|record)\b|\bsince\b|\byear[- ]to[- ]date\b|\bYTD\b"
+    r"|\bthis year\b|\bover the (?:past|last)\b|\bin (?:January|February|March|April|May|June|July|August|September"
+    r"|October|November|December|20\d\d)\b|今年以来|今年以來|年内|年內", re.I)
+# "Nvidia-backed CoreWeave", "Tencent-backed startup": the news is about the other company.
+BACKED_BY = re.compile(r"[\w.&'’]+-(?:backed|owned|linked|funded|affiliated|supported)\b", re.I)
 NOISE_SOURCES = ("motley fool", "fool.com", "investorplace", "24/7 wall st", "zacks", "marketbeat",
                  "simply wall st", "ainvest", "gurufocus", "seeking alpha", "tipranks", "insider monkey",
                  "chartmill", "ad-hoc-news", "shattered.io", "stock titan", "stocktitan", "biggo",
@@ -154,9 +173,10 @@ def _companies(text: str, companies: list[Company]) -> list[Company]:
 
 
 def move_points(title: str) -> int:
+    title = NOT_PRICE.sub(" ", title)
     strong = bool(STRONG_MOVE.search(title))
     mild = strong or bool(MILD_MOVE.search(title))
-    pct = max((float(m) for m in PERCENT.findall(title)), default=0.0)
+    pct = 0.0 if HISTORICAL.search(title) else max((float(m) for m in PERCENT.findall(title)), default=0.0)
     points = 2 if strong else 0
     if mild and pct >= 5:
         points = 3 if strong else 2
@@ -183,7 +203,7 @@ def is_trusted(source: str) -> bool:
 def tag_item(item: dict, cfg: Config) -> dict | None:
     """Add analysis fields (prefixed with _) to an item; return None if it's outside our focus."""
     title = item["title"]
-    title_cos = _companies(title, cfg.companies)
+    title_cos = _companies(BACKED_BY.sub(" ", title), cfg.companies)
     other_cos = [c for c in _companies(item.get("summary", ""), cfg.companies) if c not in title_cos]
     cats = categories_for(title)
     sector = bool(SECTOR.search(title) or SECTOR.search(item.get("summary", "")))
@@ -204,8 +224,9 @@ def tag_item(item: dict, cfg: Config) -> dict | None:
         score += 1 + (1 if any(c.watch for c in other_cos) else 0)
     elif sector or "macro" in cats:
         score += 1
-    question = bool(QUESTION.search(title))  # "Is Nvidia a buy?" is opinion, not news
-    wrap = bool(WRAP.search(title))
+    question = bool(QUESTION.search(title) or PREVIEW.search(title))  # opinion or preview, not news
+    # Round-ups: market wraps, or several stocks' moves in one headline ("X rises 5%; Y gains 3%").
+    wrap = bool(WRAP.search(title)) or len(PERCENT.findall(title)) >= 2
     score += moves + (1 if trusted else 0) - (4 if noise else 0) - (2 if question else 0) - (2 if wrap else 0)
 
     return {
@@ -218,6 +239,7 @@ def tag_item(item: dict, cfg: Config) -> dict | None:
         "_noise": noise,
         "_trusted": trusted,
         "_score": score,
+        "_wrap": wrap,
         "_toks": tokens(title),
     }
 
@@ -352,8 +374,10 @@ def build_story(items: list[dict], cfg: Config) -> dict:
     score = round(best + coverage_points(outlets), 1)
     a = cfg.alerts
     level = "big" if score >= a["big_news_score"] else "notable" if score >= a["notable_score"] else "normal"
-    if level == "big" and (outlets < 2 or not cats & MATERIAL):
-        level = "notable"  # big needs a second outlet and a real event (not just a product or analyst note)
+    roundup = lead["_wrap"]
+    if level == "big" and (outlets < 2 or not cats & MATERIAL or roundup):
+        # Big needs a second outlet and a real event: not just a product launch, an analyst note or a market round-up.
+        level = "notable"
     if lead["_noise"]:
         level = "normal"
 
@@ -412,6 +436,7 @@ def build_story(items: list[dict], cfg: Config) -> dict:
         "_item_ids": [i["id"] for i in items],
         "_title_companies": set(title_companies),
         "_material": bool(cats & MATERIAL),
+        "_roundup": roundup,
         "_toks": lead["_toks"],
     }
 
@@ -465,7 +490,7 @@ def select_alerts(stories: list[dict], state: dict, cfg: Config, now: datetime) 
 
     eligible = []
     for s in stories:
-        if s["noise"] or s["alt_dup"] or not s["_material"] or s["outlets"] < 2:
+        if s["noise"] or s["alt_dup"] or not s["_material"] or s["outlets"] < 2 or s["_roundup"]:
             continue
         if any(i in notified or i in muted for i in s["_item_ids"]):
             continue

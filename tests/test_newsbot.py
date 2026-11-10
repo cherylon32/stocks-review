@@ -470,3 +470,63 @@ def test_jpmorgan_own_news_still_matches(cfg, text):
 def test_valuation_word_alone_is_not_a_deal():
     assert "deal" not in analyze.categories_for("Broker lowers Nvidia price target on valuation")
     assert "deal" in analyze.categories_for("OpenAI secures $11bn in funding round with $1.25tn valuation")
+
+
+# ── Lessons from the first night of alerts ────────────────────────────
+
+def test_backed_by_does_not_make_it_news_about_the_backer(cfg):
+    # Nothing left to follow once "Nvidia-backed" is set aside, so the headline is dropped.
+    assert analyze.tag_item(item("Cathie Wood raises uncomfortable question about Nvidia-backed stock", "Benzinga"), cfg) is None
+    item_ = analyze.tag_item(item("Tencent-backed AI startup files for Hong Kong IPO", "Reuters"), cfg)
+    assert item_ is not None and "Tencent" not in [c.name for c in item_["_title_companies"]]
+    item_ = analyze.tag_item(item("Nvidia-backed CoreWeave shares sink 9%", "Reuters"), cfg)
+    assert [c.name for c in item_["_title_companies"]] == ["CoreWeave"]
+
+
+@pytest.mark.parametrize("title, points", [
+    ("CoreWeave Q3 Preview: Stock Down 73% From Highs", 0),
+    ("ASML Shares Fell 12% in October Despite Record Sales", 0),
+    ("Tesla shares rose 40% this year", 0),
+    ("Nvidia shares tumble 7% after warning", 3),
+])
+def test_past_performance_is_not_todays_move(title, points):
+    assert analyze.move_points(title) == points
+
+
+@pytest.mark.parametrize("event, preview", [
+    ("Anthropic files for IPO", "Countdown to Anthropic IPO"),
+    ("CoreWeave reports third-quarter results", "CoreWeave Q3 Preview: market expert says company faces two big tests"),
+    ("Nvidia reports record quarterly earnings", "What to expect from Nvidia earnings"),
+])
+def test_previews_score_lower_than_events(cfg, event, preview):
+    score = lambda t: analyze.tag_item(item(t, "Reuters"), cfg)["_score"]
+    assert score(preview) < score(event)
+
+
+def test_market_round_ups_never_alert(cfg):
+    stories = analyze.build_stories([
+        item("Tesla rises 5% despite refund warning, Lucid jumps 8% ahead of earnings; Rivian slips", "Benzinga", 40),
+        item("Tesla rises 5% despite refund warning, Lucid jumps 8% ahead of earnings", "Yahoo Finance", 30),
+        item("KOSPI rebounds 1.5% as Samsung and SK Hynix recover from rout", "Reuters", 40),
+        item("KOSPI rebounds as Samsung and SK Hynix recover from Friday's rout", "Bloomberg", 30),
+    ], cfg)
+    assert stories and all(s["level"] != "big" for s in stories)
+    assert analyze.select_alerts(stories, {}, cfg, NOW) == []
+
+
+def test_single_company_move_still_alerts(cfg):
+    stories = analyze.build_stories([
+        item("Tesla shares plunge 12% after deliveries miss estimates", "Reuters", 40),
+        item("Tesla stock plunges 12% as deliveries miss estimates", "CNBC", 30),
+    ], cfg)
+    assert [s["level"] for s in stories] == ["big"]
+    assert len(analyze.select_alerts(stories, {}, cfg, NOW)) == 1
+
+
+@pytest.mark.parametrize("title, points", [
+    ("Google unveils new AI chip variants as cloud demand surges", 0),
+    ("TSMC sales jump 40% on AI orders", 0),
+    ("Google shares surge 8% on new AI chips", 3),
+])
+def test_business_numbers_moving_are_not_a_price_move(title, points):
+    assert analyze.move_points(title) == points
